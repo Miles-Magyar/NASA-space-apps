@@ -454,6 +454,8 @@ img {
 .si-panel,
 .mission-controls,
 .ranking-panel,
+.safety-fit-panel,
+.fuels-data-panel,
 .studies-panel,
 .records-panel,
 .cad-checker,
@@ -467,6 +469,8 @@ img {
 .fuels-theme .si-panel,
 .fuels-theme .mission-controls,
 .fuels-theme .ranking-panel,
+.fuels-theme .safety-fit-panel,
+.fuels-theme .fuels-data-panel,
 .fuels-theme .plot-card,
 .fuels-theme .study-card,
 .fuels-theme .record-card,
@@ -474,6 +478,94 @@ img {
   background: #2a2a2a;
   border-radius: 0;
   border-color: #3a3a3a;
+}
+
+.safety-fit-panel {
+  border-left: 3px solid var(--ok);
+}
+
+.safety-fit-panel .eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  color: var(--cream-dim);
+  margin: 0 0 0.35rem;
+}
+
+.safety-fit-panel h2,
+.fuels-data-panel h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  margin: 0 0 0.65rem;
+}
+
+.safety-fit-name {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  margin: 0 0 0.35rem;
+}
+
+.safety-fit-meta {
+  color: var(--cool);
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+
+.safety-fit-reasons {
+  margin: 0.5rem 0 0.75rem;
+  padding-left: 1.2rem;
+  color: var(--cream-faint);
+}
+
+.fuels-data-lede,
+.table-footnote {
+  color: var(--cream-dim);
+  font-size: 0.95rem;
+  max-width: 52rem;
+}
+
+.table-footnote {
+  margin: 0.75rem 0 0;
+}
+
+.comprehensive-table {
+  margin-top: 0.75rem;
+}
+
+.comprehensive-fuels-table {
+  white-space: normal;
+  font-size: 0.88rem;
+}
+
+.comprehensive-fuels-table th,
+.comprehensive-fuels-table td {
+  white-space: normal;
+  vertical-align: top;
+  min-width: 6.5rem;
+}
+
+.comprehensive-fuels-table .col-name {
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 8rem;
+}
+
+.comprehensive-fuels-table .col-summary,
+.comprehensive-fuels-table .col-note,
+.comprehensive-fuels-table .col-scenario {
+  min-width: 14rem;
+  max-width: 22rem;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.comprehensive-fuels-table tr[data-group='propulsion'] td:first-child {
+  color: var(--cream-dim);
+}
+
+.comprehensive-fuels-table tr[data-group='cabin'] td:first-child,
+.comprehensive-fuels-table tr[data-group='materials'] td:first-child {
+  color: var(--cool);
 }
 
 .si-panel-head,

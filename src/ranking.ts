@@ -78,6 +78,97 @@ export function rankRows(rows: MissionRow[], scenario: ScenarioPreset): RankedRo
     .sort((a, b) => b.score - a.score);
 }
 
+function loiBand(row: MissionRow): { lo: number; hi: number } | null {
+  const loi = row.loiOrLocPercent;
+  if (!loi) return null;
+  const lo = loi.min ?? loi.value;
+  const hi = loi.max ?? loi.value;
+  if (lo == null || hi == null) return null;
+  return { lo, hi };
+}
+
+/**
+ * Best heuristic fit for safety-regulation screening under the selected atmosphere:
+ * cabin/material rows whose published LOI/LOC sits above habitat O₂, with citation depth.
+ * Falls back to the largest LOI margin (least shortfall) when nothing clears the O₂ target.
+ */
+export function bestSafetyRegulationFit(
+  rows: MissionRow[],
+  scenario: ScenarioPreset,
+): RankedRow | undefined {
+  const candidates = rows.filter(
+    (r) =>
+      r.group === 'cabin' ||
+      r.group === 'materials' ||
+      r.evidenceType === 'solid-material' ||
+      r.evidenceType === 'cabin-surrogate' ||
+      r.evidenceType === 'oxygen-compatibility',
+  );
+  if (!candidates.length) return undefined;
+
+  const scored = candidates.map((row) => {
+    const reasons: string[] = [];
+    let score = 0;
+    const band = loiBand(row);
+    if (band) {
+      const margin = band.lo - scenario.oxygenPercent;
+      if (margin >= 5) {
+        score += 80 + Math.min(margin, 20);
+        reasons.push(
+          `Published LOI/LOC band (${band.lo}–${band.hi}% O₂) clears ${scenario.label} (${scenario.oxygenPercent}% O₂) with ~${margin.toFixed(0)} pt margin`,
+        );
+      } else if (margin >= 0) {
+        score += 55 + margin * 4;
+        reasons.push(
+          `LOI/LOC band (${band.lo}–${band.hi}% O₂) meets or barely clears habitat O₂ — specimen verification still required`,
+        );
+      } else {
+        score += 20 + Math.max(margin, -20);
+        reasons.push(
+          `LOI/LOC band (${band.lo}–${band.hi}% O₂) is below ${scenario.oxygenPercent}% O₂ — does not clear this atmosphere alone`,
+        );
+      }
+    } else {
+      score += 8;
+      reasons.push('No published LOI/LOC on this row — cannot clear oxygen-limit screening from this record alone');
+    }
+
+    if (row.sources.length >= 2) {
+      score += 12;
+      reasons.push(`Sourced (${row.sources.length} citations)`);
+    } else if (row.sources.length === 1) {
+      score += 6;
+      reasons.push('Single primary citation');
+    }
+
+    if (row.investigationIds?.length) {
+      score += 10;
+      reasons.push(`Tied to ${row.investigationIds.join(', ')}`);
+    }
+
+    if (row.group === 'propulsion') {
+      score -= 40;
+      reasons.push('Propulsion reference — outside cabin safety-regulation core');
+    }
+
+    if (scenario.id === 'emu' && row.evidenceType === 'oxygen-compatibility') {
+      score += 25;
+      reasons.push('Oxygen-compatibility evidence aligns with EMU pure-O₂ service rules');
+    }
+
+    const note = row.scenarioNotes[scenario.id];
+    if (note) {
+      score += 5;
+      reasons.push(note);
+    }
+
+    return { row, score, reasons };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0];
+}
+
 export function rankingDisclaimer(): string {
-  return 'Scores are transparent heuristics for triage (oxygen-limit proximity, citation depth, cabin vs propulsion scope). They are not a validated SI risk model.';
+  return 'Triage scores highlight concern and citation depth. The safety-regulation suggestion prefers cabin/material rows whose LOI/LOC clears the selected atmosphere. Neither is a validated quantitative risk model.';
 }

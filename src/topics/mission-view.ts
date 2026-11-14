@@ -1,12 +1,13 @@
-import type { MissionDataset, MissionRow, ScenarioId } from './mission-types';
+import type { MetricValue, MissionDataset, MissionRow, ScenarioId } from './mission-types';
 import { SCENARIOS, scenarioById } from './mission-scenarios';
 import { renderPlots } from './fuels/plots';
-import { rankRows, rankingDisclaimer } from '../ranking';
+import { bestSafetyRegulationFit, rankRows, rankingDisclaimer } from '../ranking';
 import { requestSummary } from '../si-client';
 
-type SortKey = 'name' | 'flash' | 'ait' | 'o2' | 'pressure' | 'loi';
+type SortKey = 'name' | 'group' | 'flash' | 'ait' | 'o2' | 'pressure' | 'loi';
 
 function metricNum(row: MissionRow, key: SortKey): number {
+  if (key === 'group') return 0;
   const m =
     key === 'flash'
       ? row.flashPointC
@@ -23,9 +24,7 @@ function metricNum(row: MissionRow, key: SortKey): number {
   return m.value ?? m.min ?? m.max ?? Number.POSITIVE_INFINITY;
 }
 
-function fmtMetric(
-  m: { value?: number; min?: number; max?: number; unit: string } | undefined,
-): string {
+function fmtMetric(m: MetricValue | undefined): string {
   if (!m) return '—';
   if (m.value != null) return `${m.value} ${m.unit}`;
   if (m.min != null && m.max != null) return `${m.min}–${m.max} ${m.unit}`;
@@ -34,10 +33,42 @@ function fmtMetric(
   return '—';
 }
 
+function metricNote(m: MetricValue | undefined): string {
+  if (!m?.note) return '—';
+  return m.note;
+}
+
+function groupLabel(group: MissionRow['group']): string {
+  switch (group) {
+    case 'cabin':
+      return 'Cabin / surrogate';
+    case 'propulsion':
+      return 'Propulsion reference';
+    case 'materials':
+      return 'Materials';
+    case 'detection':
+      return 'Detection';
+    case 'suppression':
+      return 'Suppression';
+    case 'systems':
+      return 'Systems';
+    default:
+      return group;
+  }
+}
+
 function sourcesHtml(row: MissionRow): string {
   return row.sources
     .map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${s.label}</a>`)
     .join('; ');
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 export interface MissionViewState {
@@ -51,6 +82,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
   let groupFilter: string = 'all';
   let sortKey: SortKey = 'name';
   let sortAsc = true;
+  const isFuels = data.topicId === 'fuels';
 
   container.innerHTML = `
     <header class="topic-header">
@@ -85,28 +117,54 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       </label>
       <p class="scenario-notes"></p>
     </section>
+    <section class="safety-fit-panel" aria-live="polite">
+      <p class="eyebrow">Heuristic suggestion</p>
+      <h2>Best fit for safety regulations</h2>
+      <div class="safety-fit-body"></div>
+    </section>
     <section class="ranking-panel">
-      <h2>Evidence ranking</h2>
+      <h2>Evidence triage ranking</h2>
       <p class="ranking-disclaimer"></p>
       <ol class="ranking-list"></ol>
     </section>
-    <section class="table-wrap ${data.sharpPanels ? 'sharp fuels-table' : ''}">
-      <table class="evidence-table">
-        <thead>
-          <tr>
-            <th data-sort="name">Name</th>
-            <th>Evidence</th>
-            <th data-sort="flash">Flash point</th>
-            <th data-sort="ait">Autoignition</th>
-            <th data-sort="o2">O₂ fraction</th>
-            <th data-sort="pressure">Pressure</th>
-            <th data-sort="loi">LOI / LOC</th>
-            <th>Scenario</th>
-            <th>Sources</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <section class="fuels-data-panel">
+      <header class="fuels-data-head">
+        <h2>${isFuels ? 'Comprehensive fuels data' : 'Evidence data table'}</h2>
+        <p class="fuels-data-lede">
+          ${
+            isFuels
+              ? 'Full curated matrix for every cabin/surrogate and propulsion-reference entry. Read flash point, autoignition, test oxygen and pressure, LOI/LOC, method notes, and sources yourself — values stay tied to their test conditions.'
+              : 'Curated evidence rows for this topic. Compare measurements against the selected atmosphere and open the cited sources.'
+          }
+        </p>
+      </header>
+      <div class="table-wrap ${data.sharpPanels ? 'sharp fuels-table' : ''} comprehensive-table">
+        <table class="evidence-table comprehensive-fuels-table">
+          <thead>
+            <tr>
+              <th data-sort="group">Group</th>
+              <th data-sort="name">Name</th>
+              <th>Evidence</th>
+              <th class="col-summary">Summary</th>
+              <th data-sort="flash">Flash point</th>
+              <th>Flash note</th>
+              <th data-sort="ait">Autoignition</th>
+              <th>AIT note</th>
+              <th data-sort="o2">Test / ref O₂</th>
+              <th>O₂ note</th>
+              <th data-sort="pressure">Test / ref pressure</th>
+              <th>Pressure note</th>
+              <th data-sort="loi">LOI / LOC</th>
+              <th>LOI / LOC note</th>
+              <th>Scenario comparison</th>
+              <th>Investigations</th>
+              <th>Sources</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="table-footnote">Unreported or inapplicable figures appear as an em dash (—). Droplet LOI, gas-vessel LOC, and solid-material oxygen limits are not interchangeable.</p>
     </section>
     <section class="plots-host" hidden></section>
     <section class="studies-panel">
@@ -125,12 +183,15 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
   const scenarioSelect = container.querySelector<HTMLSelectElement>('.scenario-select')!;
   const scenarios = SCENARIOS.filter((s) => data.showEarthScenario || !s.fuelsOnly);
   scenarioSelect.innerHTML = scenarios
-    .map((s) => `<option value="${s.id}">${s.label} (${s.oxygenPercent}% O₂, ${s.pressurePsia} psia, ${s.gravityLabel})</option>`)
+    .map(
+      (s) =>
+        `<option value="${s.id}">${s.label} (${s.oxygenPercent}% O₂, ${s.pressurePsia} psia, ${s.gravityLabel})</option>`,
+    )
     .join('');
   scenarioSelect.value = scenarioId;
 
   const plotsHost = container.querySelector<HTMLElement>('.plots-host')!;
-  if (data.topicId === 'fuels') {
+  if (isFuels) {
     plotsHost.hidden = false;
   }
 
@@ -150,17 +211,46 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       .filter((r) => (groupFilter === 'all' ? true : r.group === groupFilter))
       .filter((r) => {
         if (!q) return true;
-        const blob = `${r.name} ${r.summary} ${r.tags.join(' ')} ${r.evidenceType}`.toLowerCase();
+        const blob = `${r.name} ${r.summary} ${r.tags.join(' ')} ${r.evidenceType} ${r.group}`.toLowerCase();
         return blob.includes(q);
       })
       .sort((a, b) => {
         if (sortKey === 'name') {
           return sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
         }
+        if (sortKey === 'group') {
+          const cmp = groupLabel(a.group).localeCompare(groupLabel(b.group)) || a.name.localeCompare(b.name);
+          return sortAsc ? cmp : -cmp;
+        }
         const av = metricNum(a, sortKey);
         const bv = metricNum(b, sortKey);
         return sortAsc ? av - bv : bv - av;
       });
+  }
+
+  function renderSafetyFit(rows: MissionRow[], scenarioIdNow: ScenarioId) {
+    const scenario = scenarioById(scenarioIdNow)!;
+    const fit = bestSafetyRegulationFit(rows, scenario);
+    const host = container.querySelector('.safety-fit-body')!;
+    if (!fit) {
+      host.innerHTML = `<p>No cabin/material candidates in the current filter set.</p>`;
+      return;
+    }
+    const band = fit.row.loiOrLocPercent;
+    host.innerHTML = `
+      <article class="safety-fit-card">
+        <p class="safety-fit-name">${escapeHtml(fit.row.name)}</p>
+        <p class="safety-fit-meta">${escapeHtml(groupLabel(fit.row.group))} · ${escapeHtml(fit.row.evidenceType)} · heuristic fit ${fit.score}</p>
+        <p>${escapeHtml(fit.row.summary)}</p>
+        <p><strong>Against ${escapeHtml(scenario.label)}:</strong> ${escapeHtml(scenario.oxygenPercent + '% O₂, ' + scenario.pressurePsia + ' psia, ' + scenario.gravityLabel)}</p>
+        <p><strong>Published LOI / LOC:</strong> ${escapeHtml(fmtMetric(band))}</p>
+        <ul class="safety-fit-reasons">
+          ${fit.reasons.map((r) => `<li>${escapeHtml(r)}</li>`).join('')}
+        </ul>
+        <p class="sources-cell">${sourcesHtml(fit.row)}</p>
+        <p class="si-caveat">Suggestion only for triage against oxygen-limit style screening. Confirm specimen, flow, pressure, and program standards before design decisions. Read the full table below for every fuel and material record.</p>
+      </article>
+    `;
   }
 
   function render() {
@@ -169,19 +259,30 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     container.querySelector('.ranking-disclaimer')!.textContent = rankingDisclaimer();
 
     const rows = visibleRows();
+    renderSafetyFit(rows, scenarioId);
+
     const tbody = container.querySelector('tbody')!;
     tbody.innerHTML = rows
       .map((r) => {
         const note = r.scenarioNotes[scenarioId] ?? '—';
-        return `<tr>
-          <td>${r.name}</td>
-          <td>${r.evidenceType}</td>
-          <td>${fmtMetric(r.flashPointC)}</td>
-          <td>${fmtMetric(r.autoignitionC)}</td>
-          <td>${fmtMetric(r.oxygenFractionPercent)}</td>
-          <td>${fmtMetric(r.pressurePsia)}</td>
-          <td>${fmtMetric(r.loiOrLocPercent)}</td>
-          <td>${note}</td>
+        const investigations = r.investigationIds?.join(', ') || '—';
+        return `<tr data-group="${r.group}">
+          <td>${escapeHtml(groupLabel(r.group))}</td>
+          <td class="col-name">${escapeHtml(r.name)}</td>
+          <td>${escapeHtml(r.evidenceType)}</td>
+          <td class="col-summary">${escapeHtml(r.summary)}</td>
+          <td>${escapeHtml(fmtMetric(r.flashPointC))}</td>
+          <td class="col-note">${escapeHtml(metricNote(r.flashPointC))}</td>
+          <td>${escapeHtml(fmtMetric(r.autoignitionC))}</td>
+          <td class="col-note">${escapeHtml(metricNote(r.autoignitionC))}</td>
+          <td>${escapeHtml(fmtMetric(r.oxygenFractionPercent))}</td>
+          <td class="col-note">${escapeHtml(metricNote(r.oxygenFractionPercent))}</td>
+          <td>${escapeHtml(fmtMetric(r.pressurePsia))}</td>
+          <td class="col-note">${escapeHtml(metricNote(r.pressurePsia))}</td>
+          <td>${escapeHtml(fmtMetric(r.loiOrLocPercent))}</td>
+          <td class="col-note">${escapeHtml(metricNote(r.loiOrLocPercent))}</td>
+          <td class="col-scenario">${escapeHtml(note)}</td>
+          <td>${escapeHtml(investigations)}</td>
           <td class="sources-cell">${sourcesHtml(r)}</td>
         </tr>`;
       })
@@ -191,26 +292,26 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     container.querySelector('.ranking-list')!.innerHTML = ranked
       .map(
         (r, i) => `<li>
-          <strong>${i + 1}. ${r.row.name}</strong>
-          <span class="rank-score">heuristic ${r.score}</span>
-          <ul>${r.reasons.map((x) => `<li>${x}</li>`).join('')}</ul>
+          <strong>${i + 1}. ${escapeHtml(r.row.name)}</strong>
+          <span class="rank-score">triage ${r.score}</span>
+          <ul>${r.reasons.map((x) => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
         </li>`,
       )
       .join('');
 
-    if (data.topicId === 'fuels') {
+    if (isFuels) {
       renderPlots(plotsHost, rows);
     }
 
     container.querySelector('.study-grid')!.innerHTML = data.studies
       .map(
         (s) => `<article class="study-card" id="study-${s.id}">
-          <h3>${s.title}</h3>
-          <p class="study-facility">${s.facility ?? s.investigation}</p>
-          <p>${s.summary}</p>
-          <p><strong>Key finding:</strong> ${s.keyFinding}</p>
-          ${s.openQuestion ? `<p><strong>Open question:</strong> ${s.openQuestion}</p>` : ''}
-          <p class="sources-cell">${s.sources.map((x) => `<a href="${x.url}" target="_blank" rel="noopener">${x.label}</a>`).join(' · ')}</p>
+          <h3>${escapeHtml(s.title)}</h3>
+          <p class="study-facility">${escapeHtml(s.facility ?? s.investigation)}</p>
+          <p>${escapeHtml(s.summary)}</p>
+          <p><strong>Key finding:</strong> ${escapeHtml(s.keyFinding)}</p>
+          ${s.openQuestion ? `<p><strong>Open question:</strong> ${escapeHtml(s.openQuestion)}</p>` : ''}
+          <p class="sources-cell">${s.sources.map((x) => `<a href="${x.url}" target="_blank" rel="noopener">${escapeHtml(x.label)}</a>`).join(' · ')}</p>
         </article>`,
       )
       .join('');
@@ -218,9 +319,9 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     container.querySelector('.record-grid')!.innerHTML = data.records
       .map(
         (r) => `<article class="record-card">
-          <h3>${r.title}</h3>
-          <p>${r.body}</p>
-          <p class="sources-cell">${r.sources.map((x) => `<a href="${x.url}" target="_blank" rel="noopener">${x.label}</a>`).join(' · ')}</p>
+          <h3>${escapeHtml(r.title)}</h3>
+          <p>${escapeHtml(r.body)}</p>
+          <p class="sources-cell">${r.sources.map((x) => `<a href="${x.url}" target="_blank" rel="noopener">${escapeHtml(x.label)}</a>`).join(' · ')}</p>
         </article>`,
       )
       .join('');
@@ -269,18 +370,33 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     siBtn.disabled = true;
     siBody.textContent = 'Summarizing…';
     const scenario = scenarioById(scenarioId)!;
-    const ranked = rankRows(visibleRows(), scenario).slice(0, 5);
-    const text = await requestSummary({
-      topicId: data.topicId,
-      topicTitle: data.title,
-      scenarioLabel: scenario.label,
-      scenarioNotes: scenario.notes,
-      topRows: ranked.map((r) => ({
+    const rows = visibleRows();
+    const fit = bestSafetyRegulationFit(rows, scenario);
+    const ranked = rankRows(rows, scenario).slice(0, 5);
+    const topRows = [
+      ...(fit
+        ? [
+            {
+              name: `Safety-regulation fit: ${fit.row.name}`,
+              summary: fit.row.summary,
+              reasons: fit.reasons,
+              sources: fit.row.sources,
+            },
+          ]
+        : []),
+      ...ranked.map((r) => ({
         name: r.row.name,
         summary: r.row.summary,
         reasons: r.reasons,
         sources: r.row.sources,
       })),
+    ];
+    const text = await requestSummary({
+      topicId: data.topicId,
+      topicTitle: data.title,
+      scenarioLabel: scenario.label,
+      scenarioNotes: scenario.notes,
+      topRows,
     });
     siBody.innerHTML = text;
     siBtn.disabled = false;
