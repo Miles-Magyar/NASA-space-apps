@@ -86,7 +86,7 @@ export interface TopicDefinition {
   title: string;
   shortTitle: string;
   description: string;
-  kind: 'general' | 'mission' | 'synthesis';
+  kind: 'general' | 'mission' | 'synthesis' | 'catalog';
 }
 
 export interface MissionDataset {

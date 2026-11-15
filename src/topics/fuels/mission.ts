@@ -362,20 +362,89 @@ const propulsionRows: MissionRow[] = [
   },
 ];
 
+const suppressionRows: MissionRow[] = [
+  {
+    id: 'flex-inert-diluents',
+    name: 'FLEX inert diluents (CO₂ / He)',
+    group: 'suppression',
+    evidenceType: 'suppression',
+    summary:
+      'FLEX mapped how CO₂ and helium diluents change heptane/methanol droplet flammability limits in µg — terrestrial inerting margins can be non-conservative.',
+    oxygenFractionPercent: {
+      min: 12,
+      max: 21,
+      unit: '% O₂',
+      note: 'Ambient mixtures with inert suppressants; limit depends on diluent and droplet size',
+      scenario: 'reduced-g',
+    },
+    pressurePsia: { min: 7.4, max: 29.4, unit: 'psia', scenario: 'reduced-g' },
+    scenarioNotes: {
+      iss: 'Primary suppressant-margin evidence for cabin liquid-fuel surrogates.',
+      lunar: 'Elevated habitat O₂ erodes the inerting headroom shown near air.',
+    },
+    sources: [
+      { label: 'PSI FLEX', url: 'https://psi.nasa.gov/physci/repo/data/investigations/PSI-69' },
+      { label: 'FLEX run table', url: 'https://ntrs.nasa.gov/citations/20150023456' },
+    ],
+    tags: ['FLEX', 'suppression', 'CO2', 'helium'],
+    investigationIds: ['flex'],
+  },
+  {
+    id: 'acme-bre-surrogate',
+    name: 'ACME BRE fuel-property surrogate',
+    group: 'cabin',
+    evidenceType: 'cabin-surrogate',
+    summary:
+      'Burning Rate Emulator uses gaseous fuels on a porous burner to emulate condensed-fuel burning rates — a suppression/materials triage aid, not a new LOI inventing row.',
+    scenarioNotes: {
+      iss: 'Property matching for paper/plastic/alcohol-like behavior without consuming solid samples.',
+      earth: 'Do not treat BRE gas flow as a published flash/AIT for a named propellant.',
+    },
+    sources: [
+      {
+        label: 'NASA CIR / ACME',
+        url: 'https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/science-facilities-on-the-iss/fluids-combustion-facility/',
+      },
+    ],
+    tags: ['ACME', 'BRE', 'surrogate'],
+    investigationIds: ['acme'],
+  },
+];
+
 export const fuelsMission: MissionDataset = {
   topicId: 'fuels',
   title: 'Fuels',
   intro:
-    'Cabin and surrogate fuels from NASA microgravity campaigns, plus propulsion-reference propellants kept clearly labeled outside the PSI cabin-fire core. Atmosphere presets reshape scenario notes; numbers stay tied to their test methods.',
-  rows: [...cabinRows, ...propulsionRows],
-  studies: studiesByIds(['flex', 'slice', 'spice', 'bass', 'sofie']),
+    'Cabin and surrogate fuels from NASA microgravity campaigns, plus propulsion-reference propellants kept clearly labeled outside the PSI cabin-fire core. Suppression-linked FLEX/ACME findings sit with cabin evidence. Atmosphere presets reshape scenario notes; numbers stay tied to their test methods.',
+  rows: [...cabinRows, ...suppressionRows, ...propulsionRows],
+  studies: studiesByIds(['flex', 'slice', 'spice', 'bass', 'sofie', 'acme', 'saffire', 'same']),
   records: [
     {
       id: 'fuels-groups',
       title: 'Two evidence groups',
-      body: 'Group 1 (cabin/surrogate): n-heptane, methanol, methane gas, ethylene, SIBAL, PMMA, Nomex. Group 2 (propulsion reference): hydrazine, MMH, RP-1, liquid methane, liquid hydrogen, ASCENT/AF-M315E.',
+      body: 'Group 1 (cabin/surrogate + suppression context): n-heptane, methanol, methane gas, ethylene, SIBAL, PMMA, Nomex, FLEX inert diluents, ACME BRE surrogate. Group 2 (propulsion reference): hydrazine, MMH, RP-1, liquid methane, liquid hydrogen, ASCENT/AF-M315E — outside core PSI cabin-fire scope.',
       sources: [{ label: 'Challenge scope note', url: 'https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/' }],
       tags: ['taxonomy'],
+    },
+    {
+      id: 'fuels-saffire-same-caveat',
+      title: 'Saffire / SAME context (not fuel LOI)',
+      body: 'Saffire informs solid flame-spread lengths and SAME informs smoke detection — useful cabin context beside fuel rows, but neither replaces droplet LOI or gas LOC for the named fuels above.',
+      sources: [
+        { label: 'PSI Saffire-I', url: 'https://psi.nasa.gov/physci/repo/data/investigations/PSI-98' },
+        { label: 'NASA fire safety', url: 'https://www.nasa.gov/missions/station/studying-combustion-and-fire-safety/' },
+      ],
+      tags: ['caveat', 'Saffire', 'SAME'],
+    },
+    {
+      id: 'fuels-suppress-playbook',
+      title: 'Suppressant margin checklist (FLEX)',
+      body: 'Identify the surrogate fuel class; read FLEX diluent runs at comparable O₂/pressure; assume Earth inerting standards may be non-conservative in µg; re-check when cabin O₂ rises for lunar habitats.',
+      sources: [
+        { label: 'PSI FLEX', url: 'https://psi.nasa.gov/physci/repo/data/investigations/PSI-69' },
+        { label: 'Droplet LOI study', url: 'https://doi.org/10.1007/s12217-014-9372-2' },
+      ],
+      tags: ['playbook', 'suppression'],
     },
   ],
   showEarthScenario: true,

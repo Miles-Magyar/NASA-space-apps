@@ -4,7 +4,13 @@ export interface RankedRow {
   row: MissionRow;
   score: number;
   reasons: string[];
+  /** Sub-scores for alternate triage sorts */
+  evidenceStrength: number;
+  atmosphereRelevance: number;
+  materialCategory: number;
 }
+
+export type RankingSortMode = 'triage' | 'evidence' | 'atmosphere' | 'category';
 
 function loiConcern(row: MissionRow, scenario: ScenarioPreset): number {
   const loi = row.loiOrLocPercent;
@@ -38,44 +44,90 @@ function scenarioTagBoost(row: MissionRow, scenarioId: ScenarioId): number {
   return s;
 }
 
+function materialCategoryScore(row: MissionRow): number {
+  const order: Record<string, number> = {
+    'solid-material': 90,
+    'oxygen-compatibility': 85,
+    detection: 70,
+    suppression: 65,
+    'cabin-surrogate': 55,
+    atmosphere: 45,
+    facility: 35,
+    cryogenic: 30,
+    'rover-habitat': 40,
+    'propulsion-reference': 15,
+  };
+  return order[row.evidenceType] ?? 25;
+}
+
 /** Transparent heuristic ranking — not a validated quantitative risk model. */
-export function rankRows(rows: MissionRow[], scenario: ScenarioPreset): RankedRow[] {
-  return rows
-    .map((row) => {
-      const reasons: string[] = [];
-      let score = 10;
-      const loi = loiConcern(row, scenario);
-      if (loi) {
-        score += loi;
-        reasons.push(
-          `Atmosphere O₂ (${scenario.oxygenPercent}%) vs reported oxygen limit band for ${row.name}`,
-        );
-      }
-      const eb = evidenceBoost(row);
-      score += eb;
-      if (row.investigationIds?.length) {
-        reasons.push(`Linked investigations: ${row.investigationIds.join(', ')}`);
-      }
-      if (row.group === 'propulsion') {
-        reasons.push('Propulsion-reference row (de-prioritized for cabin ranking)');
-      }
-      const sb = scenarioTagBoost(row, scenario.id);
-      score += sb;
-      if (row.scenarioNotes[scenario.id]) {
-        reasons.push(`Scenario note available for ${scenario.label}`);
-      }
-      if (scenario.id === 'emu' && row.evidenceType === 'oxygen-compatibility') {
-        score += 20;
-        reasons.push('Oxygen-compatibility evidence prioritized for EMU');
-      }
-      if ((scenario.id === 'lunar' || scenario.id === 'mars') && row.tags.some((t) => /FM2|lunar|partial/i.test(t))) {
-        score += 12;
-        reasons.push('Partial-g / lunar pathway relevance');
-      }
-      if (!reasons.length) reasons.push('Baseline topical relevance');
-      return { row, score, reasons };
-    })
-    .sort((a, b) => b.score - a.score);
+export function rankRows(
+  rows: MissionRow[],
+  scenario: ScenarioPreset,
+  sortMode: RankingSortMode = 'triage',
+): RankedRow[] {
+  const ranked = rows.map((row) => {
+    const reasons: string[] = [];
+    let score = 10;
+    const loi = loiConcern(row, scenario);
+    let atmosphereRelevance = loi;
+    if (loi) {
+      score += loi;
+      reasons.push(
+        `Atmosphere O₂ (${scenario.oxygenPercent}%) vs reported oxygen limit band for ${row.name}`,
+      );
+    }
+    const eb = evidenceBoost(row);
+    score += eb;
+    if (row.investigationIds?.length) {
+      reasons.push(`Linked investigations: ${row.investigationIds.join(', ')}`);
+    }
+    if (row.group === 'propulsion') {
+      reasons.push('Propulsion-reference row (de-prioritized for cabin ranking)');
+    }
+    const sb = scenarioTagBoost(row, scenario.id);
+    score += sb;
+    atmosphereRelevance += sb;
+    if (row.scenarioNotes[scenario.id]) {
+      reasons.push(`Scenario note available for ${scenario.label}`);
+      atmosphereRelevance += 5;
+    }
+    if (scenario.id === 'emu' && row.evidenceType === 'oxygen-compatibility') {
+      score += 20;
+      atmosphereRelevance += 20;
+      reasons.push('Oxygen-compatibility evidence prioritized for EMU');
+    }
+    if ((scenario.id === 'lunar' || scenario.id === 'mars') && row.tags.some((t) => /FM2|lunar|partial/i.test(t))) {
+      score += 12;
+      atmosphereRelevance += 12;
+      reasons.push('Partial-g / lunar pathway relevance');
+    }
+    if (!reasons.length) reasons.push('Baseline topical relevance');
+    const materialCategory = materialCategoryScore(row);
+    return {
+      row,
+      score,
+      reasons,
+      evidenceStrength: eb,
+      atmosphereRelevance,
+      materialCategory,
+    };
+  });
+
+  const key =
+    sortMode === 'evidence'
+      ? 'evidenceStrength'
+      : sortMode === 'atmosphere'
+        ? 'atmosphereRelevance'
+        : sortMode === 'category'
+          ? 'materialCategory'
+          : 'score';
+
+  return ranked.sort((a, b) => {
+    const diff = b[key] - a[key];
+    if (diff !== 0) return diff;
+    return b.score - a.score;
+  });
 }
 
 function loiBand(row: MissionRow): { lo: number; hi: number } | null {
@@ -162,7 +214,14 @@ export function bestSafetyRegulationFit(
       reasons.push(note);
     }
 
-    return { row, score, reasons };
+    return {
+      row,
+      score,
+      reasons,
+      evidenceStrength: row.sources.length * 6 + (row.investigationIds?.length ?? 0) * 10,
+      atmosphereRelevance: score,
+      materialCategory: materialCategoryScore(row),
+    };
   });
 
   scored.sort((a, b) => b.score - a.score);
@@ -170,5 +229,5 @@ export function bestSafetyRegulationFit(
 }
 
 export function rankingDisclaimer(): string {
-  return 'Triage scores highlight concern and citation depth. The safety-regulation suggestion prefers cabin/material rows whose LOI/LOC clears the selected atmosphere. Neither is a validated quantitative risk model.';
+  return 'Triage scores highlight concern and citation depth. Sort by evidence strength, atmosphere relevance, or material category without changing the underlying citations. The safety-regulation suggestion prefers cabin/material rows whose LOI/LOC clears the selected atmosphere. None of these are a validated quantitative risk model.';
 }

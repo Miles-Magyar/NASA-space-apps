@@ -1,7 +1,12 @@
 import type { MetricValue, MissionDataset, MissionRow, ScenarioId } from './mission-types';
 import { SCENARIOS, scenarioById } from './mission-scenarios';
 import { renderPlots } from './fuels/plots';
-import { bestSafetyRegulationFit, rankRows, rankingDisclaimer } from '../ranking';
+import {
+  bestSafetyRegulationFit,
+  rankRows,
+  rankingDisclaimer,
+  type RankingSortMode,
+} from '../ranking';
 import { requestSummary } from '../si-client';
 
 type SortKey = 'name' | 'group' | 'flash' | 'ait' | 'o2' | 'pressure' | 'loi';
@@ -82,6 +87,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
   let groupFilter: string = 'all';
   let sortKey: SortKey = 'name';
   let sortAsc = true;
+  let rankingSort: RankingSortMode = 'triage';
   const isFuels = data.topicId === 'fuels';
 
   container.innerHTML = `
@@ -123,7 +129,17 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       <div class="safety-fit-body"></div>
     </section>
     <section class="ranking-panel">
-      <h2>Evidence triage ranking</h2>
+      <div class="ranking-head">
+        <h2>Evidence triage ranking</h2>
+        <label class="ranking-sort-label">Sort by
+          <select class="ranking-sort">
+            <option value="triage">Overall triage</option>
+            <option value="evidence">Evidence strength</option>
+            <option value="atmosphere">Atmosphere relevance</option>
+            <option value="category">Material category</option>
+          </select>
+        </label>
+      </div>
       <p class="ranking-disclaimer"></p>
       <ol class="ranking-list"></ol>
     </section>
@@ -288,15 +304,23 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       })
       .join('');
 
-    const ranked = rankRows(rows, scenario).slice(0, 8);
+    const ranked = rankRows(rows, scenario, rankingSort).slice(0, 8);
     container.querySelector('.ranking-list')!.innerHTML = ranked
-      .map(
-        (r, i) => `<li>
+      .map((r, i) => {
+        const sortLabel =
+          rankingSort === 'evidence'
+            ? `evidence ${r.evidenceStrength}`
+            : rankingSort === 'atmosphere'
+              ? `atmosphere ${r.atmosphereRelevance}`
+              : rankingSort === 'category'
+                ? `category ${r.materialCategory}`
+                : `triage ${r.score}`;
+        return `<li>
           <strong>${i + 1}. ${escapeHtml(r.row.name)}</strong>
-          <span class="rank-score">triage ${r.score}</span>
+          <span class="rank-score">${sortLabel}</span>
           <ul>${r.reasons.map((x) => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
-        </li>`,
-      )
+        </li>`;
+      })
       .join('');
 
     if (isFuels) {
@@ -349,6 +373,15 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
   };
   groupSelect.addEventListener('change', onGroup);
   destroyFns.push(() => groupSelect.removeEventListener('change', onGroup));
+
+  const rankingSortSelect = container.querySelector<HTMLSelectElement>('.ranking-sort')!;
+  rankingSortSelect.value = rankingSort;
+  const onRankingSort = () => {
+    rankingSort = rankingSortSelect.value as RankingSortMode;
+    render();
+  };
+  rankingSortSelect.addEventListener('change', onRankingSort);
+  destroyFns.push(() => rankingSortSelect.removeEventListener('change', onRankingSort));
 
   container.querySelectorAll<HTMLElement>('th[data-sort]').forEach((th) => {
     const handler = () => {

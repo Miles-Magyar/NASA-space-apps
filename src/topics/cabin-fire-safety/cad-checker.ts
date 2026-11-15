@@ -123,10 +123,21 @@ export function checkBom(parts: BomPart[], scenario: ScenarioPreset): CheckResul
   });
 }
 
+export interface UnknownMaterialCapture {
+  material: string;
+  zone?: BomPart['zone'];
+  nearbyFuel?: string;
+  firstSeenAt: string;
+  scenarioLabel: string;
+}
+
 export function mountCadChecker(
   host: HTMLElement,
   getScenario: () => ScenarioPreset,
 ): { destroy: () => void } {
+  /** Session list of unknown materials for the next materials-library pass. */
+  const unknownSession: UnknownMaterialCapture[] = [];
+
   host.innerHTML = `
     <div class="cad-checker">
       <h2>CAD / BOM flammability checker</h2>
@@ -138,6 +149,16 @@ export function mountCadChecker(
       </div>
       <textarea class="cad-input" rows="8" spellcheck="false" placeholder='[{"material":"PMMA","nearbyFuel":"n-heptane","maxExpectedTempC":50,"zone":"cabin"}]'></textarea>
       <div class="cad-results" aria-live="polite"></div>
+      <section class="cad-unknowns">
+        <h3>Unknown materials (session)</h3>
+        <p class="muted">Captured misses for the next <code>materials-library.ts</code> data pass. Nothing is uploaded — copy or download JSON locally.</p>
+        <ul class="cad-unknown-list"></ul>
+        <div class="cad-actions">
+          <button type="button" class="btn cad-copy-unknowns" disabled>Copy unknowns JSON</button>
+          <button type="button" class="btn cad-download-unknowns" disabled>Download unknowns JSON</button>
+          <button type="button" class="btn cad-clear-unknowns" disabled>Clear session list</button>
+        </div>
+      </section>
       <div class="cad-si"></div>
     </div>
   `;
@@ -146,6 +167,57 @@ export function mountCadChecker(
   const results = host.querySelector<HTMLElement>('.cad-results')!;
   const si = host.querySelector<HTMLElement>('.cad-si')!;
   const file = host.querySelector<HTMLInputElement>('.cad-file')!;
+  const unknownList = host.querySelector<HTMLElement>('.cad-unknown-list')!;
+  const copyBtn = host.querySelector<HTMLButtonElement>('.cad-copy-unknowns')!;
+  const downloadBtn = host.querySelector<HTMLButtonElement>('.cad-download-unknowns')!;
+  const clearBtn = host.querySelector<HTMLButtonElement>('.cad-clear-unknowns')!;
+
+  const unknownsPayload = () =>
+    JSON.stringify(
+      {
+        purpose: 'Flame in Freefall materials-library feedback',
+        capturedAt: new Date().toISOString(),
+        unknowns: unknownSession,
+      },
+      null,
+      2,
+    );
+
+  const renderUnknowns = () => {
+    const has = unknownSession.length > 0;
+    copyBtn.disabled = !has;
+    downloadBtn.disabled = !has;
+    clearBtn.disabled = !has;
+    if (!has) {
+      unknownList.innerHTML = `<li class="muted">No unknown materials captured yet this session.</li>`;
+      return;
+    }
+    unknownList.innerHTML = unknownSession
+      .map(
+        (u) =>
+          `<li><strong>${u.material}</strong>${u.zone ? ` · zone ${u.zone}` : ''}${
+            u.nearbyFuel ? ` · near ${u.nearbyFuel}` : ''
+          } <span class="muted">(${u.scenarioLabel})</span></li>`,
+      )
+      .join('');
+  };
+
+  const captureUnknowns = (checked: CheckResult[], scenario: ScenarioPreset) => {
+    for (const c of checked) {
+      if (c.level !== 'unknown') continue;
+      const key = c.part.material.trim().toLowerCase();
+      if (!key) continue;
+      if (unknownSession.some((u) => u.material.toLowerCase() === key)) continue;
+      unknownSession.push({
+        material: c.part.material.trim(),
+        zone: c.part.zone,
+        nearbyFuel: c.part.nearbyFuel,
+        firstSeenAt: new Date().toISOString(),
+        scenarioLabel: scenario.label,
+      });
+    }
+    renderUnknowns();
+  };
 
   const sample = () => {
     input.value = JSON.stringify(
@@ -176,6 +248,7 @@ export function mountCadChecker(
     }
     const scenario = getScenario();
     const checked = checkBom(parts, scenario);
+    captureUnknowns(checked, scenario);
     results.innerHTML = `
       <table class="cad-table">
         <thead><tr><th>Material</th><th>Match</th><th>Level</th><th>Flags</th><th>Sources</th></tr></thead>
@@ -193,7 +266,7 @@ export function mountCadChecker(
             .join('')}
         </tbody>
       </table>
-      <p class="muted">Library size: ${MATERIALS_LIBRARY.length} materials/fuels. Unknown materials are listed for the next data pass.</p>
+      <p class="muted">Library size: ${MATERIALS_LIBRARY.length} materials/fuels. Unknown materials are appended to the session list below for the next data pass.</p>
     `;
 
     const concerns = checked.filter((c) => c.level === 'high-concern' || c.level === 'review' || c.level === 'unknown');
@@ -219,11 +292,39 @@ export function mountCadChecker(
     if (!f) return;
     input.value = await f.text();
   };
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(unknownsPayload());
+      copyBtn.textContent = 'Copied';
+      window.setTimeout(() => {
+        copyBtn.textContent = 'Copy unknowns JSON';
+      }, 1500);
+    } catch {
+      copyBtn.textContent = 'Copy failed';
+    }
+  };
+  const onDownload = () => {
+    const blob = new Blob([unknownsPayload()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'flame-in-freefall-unknown-materials.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const onClear = () => {
+    unknownSession.length = 0;
+    renderUnknowns();
+  };
 
   host.querySelector('.cad-sample')!.addEventListener('click', onSample);
   host.querySelector('.cad-run')!.addEventListener('click', onRun);
   file.addEventListener('change', onFile);
+  copyBtn.addEventListener('click', () => void onCopy());
+  downloadBtn.addEventListener('click', onDownload);
+  clearBtn.addEventListener('click', onClear);
   sample();
+  renderUnknowns();
 
   return {
     destroy: () => {

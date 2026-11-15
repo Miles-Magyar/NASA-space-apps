@@ -39,9 +39,13 @@ Static-only hosting (e.g. Porkbun): upload the contents of `dist/`. Hash routes 
 
 ## Topics
 
-General · Cabin Fire Safety · Viable Materials · Fuels · Spacesuits · Spacecraft · Engines · Fuel Storage · Rovers
+General · **Investigations** · Cabin Fire Safety · Viable Materials · Fuels · Spacesuits · Spacecraft · Engines · Fuel Storage · Rovers
 
-Cabin Fire Safety includes the CAD/BOM flammability checker (CSV/JSON materials mapped to the curated library).
+Cabin Fire Safety includes the CAD/BOM flammability checker (CSV/JSON materials mapped to the curated library, with session export of unknown materials).
+
+## Submission kit
+
+See [`SUBMISSION.md`](SUBMISSION.md) for the demo script, SI-usage statement, provenance blurb, live-URL placeholder, and judging checklist.
 
 ## Data provenance
 
@@ -49,11 +53,12 @@ Curated from NASA’s *Researcher’s Guide to Combustion Science* (ISS booklet 
 
 ## Demo script
 
-1. General scroll: Earth → microgravity → orbital lab → mission safety  
-2. Cabin Fire Safety: ISS vs lunar ranking + SI summary  
-3. Fuels: atmosphere selector, table, plots  
-4. Helpbot: ask “Saffire” or “Nomex oxygen limit”  
-5. BOM checker: load sample, flag PMMA vs lunar O₂  
+1. General scroll: Earth → microgravity → orbital lab (incl. SPICE/SLICE) → mission safety → Earth benefits  
+2. Investigations catalog: FLEX / BASS / Saffire / SAME cards  
+3. Cabin Fire Safety: ISS vs lunar ranking + SI summary + playbooks  
+4. Fuels: atmosphere selector, comprehensive table, plots  
+5. Helpbot: ask “Saffire” or “Nomex oxygen limit”  
+6. BOM checker: load sample, flag PMMA vs lunar O₂, export unknowns JSON  
 
 ## License
 

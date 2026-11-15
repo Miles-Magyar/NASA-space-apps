@@ -7,6 +7,7 @@ import { OVERVIEW_SECTIONS, SOFIE_FEATURE } from './topics/general/overview';
 import { initReadingScroll, type ReadingScrollHandles } from './topics/general/reading-scroll';
 import { getMission } from './topics/mission-data';
 import { renderMissionView, type MissionViewState } from './topics/mission-view';
+import { renderInvestigationsCatalog } from './topics/investigations/catalog';
 import { mountHelpbot } from './helpbot';
 import { searchCorpus } from './search';
 
@@ -161,7 +162,11 @@ function renderGeneral(main: HTMLElement) {
             <h2>${SOFIE_FEATURE.title}</h2>
             <p>${SOFIE_FEATURE.body}</p>
             <p class="sources-cell">${SOFIE_FEATURE.links
-              .map((l) => `<a href="${l.url}" target="_blank" rel="noopener">${l.label}</a>`)
+              .map((l) =>
+                l.url.startsWith('#')
+                  ? `<a href="${l.url}">${l.label}</a>`
+                  : `<a href="${l.url}" target="_blank" rel="noopener">${l.label}</a>`,
+              )
               .join(' · ')}</p>
           </article>
         </div>
@@ -208,8 +213,20 @@ function renderTopic(topicId: string) {
   shell.classList.add('starfield');
   chrome?.classList.add('is-visible');
   const topic = topicById(topicId);
+  if (!topic) {
+    main.innerHTML = `<p class="lede">Topic not found.</p>`;
+    return;
+  }
+
+  if (topic.kind === 'catalog') {
+    main.innerHTML = `<div class="mission-root"></div>`;
+    renderInvestigationsCatalog(main.querySelector('.mission-root')!);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+
   const mission = getMission(topicId);
-  if (!mission || !topic) {
+  if (!mission) {
     main.innerHTML = `<p class="lede">Topic not found.</p>`;
     return;
   }

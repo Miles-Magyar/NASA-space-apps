@@ -645,6 +645,29 @@ img {
   font-size: 0.85rem;
 }
 
+.ranking-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.ranking-sort-label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  color: var(--cream-dim);
+}
+
+.ranking-sort-label select {
+  font: inherit;
+  color: var(--cream);
+  background: #0d0d0d;
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.55rem;
+}
+
 .table-wrap {
   overflow-x: auto;
   background: rgba(10, 10, 10, 0.95);
@@ -779,12 +802,61 @@ img {
   font-size: 0.85rem;
 }
 
+.investigations-catalog {
+  margin-top: 0.5rem;
+}
+
+.catalog-card h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.45rem;
+  margin: 0 0 0.4rem;
+}
+
+.catalog-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.65rem 0;
+}
+
+.catalog-tags span {
+  border: 1px solid var(--line);
+  padding: 0.15rem 0.45rem;
+  font-size: 0.75rem;
+  color: var(--cream-dim);
+  letter-spacing: 0.03em;
+}
+
 .cad-input {
   width: 100%;
   min-width: 0;
   margin-top: 0.75rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85rem;
+}
+
+.cad-unknowns {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.cad-unknowns h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  margin: 0 0 0.4rem;
+}
+
+.cad-unknown-list {
+  margin: 0.5rem 0 0.75rem;
+  padding-left: 1.2rem;
+  color: var(--cream-faint);
+}
+
+.cad-actions .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .cad-table {

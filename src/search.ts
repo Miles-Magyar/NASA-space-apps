@@ -69,14 +69,22 @@ export function searchCorpus(query: string, limit = 12): SearchHit[] {
     const s =
       scoreText(inv.title, toks) * 3 +
       scoreText(inv.investigation, toks) * 3 +
+      scoreText(inv.id, toks) * 4 +
       scoreText(inv.summary + ' ' + inv.keyFinding, toks) +
       scoreText(inv.tags.join(' '), toks);
+    // Prefer catalog cards when the query names an investigation directly.
+    const exactName = toks.some(
+      (t) =>
+        inv.id === t ||
+        inv.investigation.toLowerCase().includes(t) ||
+        inv.title.toLowerCase().includes(t),
+    );
     if (s > 0) {
       hits.push({
-        score: s + 8,
+        score: s + 8 + (exactName ? 20 : 0),
         title: inv.investigation,
         snippet: inv.keyFinding,
-        href: `#spacecraft`,
+        href: `#investigations`,
         kind: 'Investigation',
       });
     }

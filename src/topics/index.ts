@@ -10,6 +10,14 @@ export const TOPICS: TopicDefinition[] = [
     kind: 'general',
   },
   {
+    id: 'investigations',
+    title: 'Investigations',
+    shortTitle: 'Investigations',
+    description:
+      'First-class cards for FLEX, BASS, Saffire, SAME, ACME, SoFIE, SPICE, SLICE, and FM2 — what was measured, key findings, open questions, and PSI/NTRS links.',
+    kind: 'catalog',
+  },
+  {
     id: 'cabin-fire-safety',
     title: 'Cabin Fire Safety',
     shortTitle: 'Cabin Fire',
