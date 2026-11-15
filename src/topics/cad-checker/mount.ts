@@ -8,6 +8,8 @@ import { buildReportPayload, reportToCsv, runFullCheck } from './engine';
 import { escapeHtml } from './escape';
 import type { AdjacencyEdge, CheckResult, UnknownMaterialCapture } from './types';
 import { sampleBomJson } from './samples';
+import { importCadText, importCadUpload, NATIVE_CAD_ACCEPT, isNativeCadFileName } from './importers/registry';
+import type { CadImportResult } from './importers/types';
 
 export interface CadCheckerOptions {
   title?: string;
@@ -24,6 +26,7 @@ export interface CadCheckerHandle {
   run: () => Promise<void>;
   setBom: (text: string) => void;
   setAdjacency: (text: string) => void;
+  setCadImport: (imported: CadImportResult, fileName: string) => void;
 }
 
 export function mountCadChecker(
@@ -36,11 +39,13 @@ export function mountCadChecker(
   let lastFormat = 'json';
   let lastEdges: AdjacencyEdge[] = [];
   let lastFileName: string | undefined;
+  /** Cached result from native CAD upload (especially proprietary binaries). */
+  let lastCadImport: CadImportResult | null = null;
 
   const title = options.title ?? 'CAD / BOM flammability checker';
   const lead =
     options.lead ??
-    'Upload build/BOM files (<code>JSON</code>, <code>CSV</code>, <code>TSV</code>, <code>NDJSON</code>, <code>XML</code>, <code>glTF</code>, <code>STEP</code>) or paste text. Optional adjacency CSV flags plastics near heat sources. Maps to the curated materials library — not a SolidWorks kernel.';
+    'Upload a BOM (<code>JSON</code>/<code>CSV</code>/…) or a CAD part/assembly (<code>DXF</code> live; <code>DWG</code>, SOLIDWORKS, Inventor, CATIA, NX/Creo detected with export guidance). Optional adjacency CSV. Maps to the curated materials library — full proprietary kernels are phased (see docs).';
 
   host.innerHTML = `
     <div class="cad-checker">
@@ -52,8 +57,8 @@ export function mountCadChecker(
         SI interprets flagged rows and must not invent uncited LOI/temps.
       </p>
       <div class="cad-actions">
-        <label class="cad-file-label">Build / BOM file
-          <input type="file" accept="${ACCEPTED_BUILD_ACCEPT}" class="cad-file" />
+        <label class="cad-file-label">Build / CAD / BOM file
+          <input type="file" accept="${ACCEPTED_BUILD_ACCEPT},${NATIVE_CAD_ACCEPT}" class="cad-file" />
         </label>
         <label class="cad-file-label">Adjacency file
           <input type="file" accept=".csv,.tsv,.json,text/csv,application/json" class="cad-adj-file" />
@@ -207,19 +212,33 @@ avionics-bay,PMMA,30,near-heat`;
     URL.revokeObjectURL(url);
   };
 
-  const run = async () => {
+  const resolveImport = (): CadImportResult => {
+    if (lastCadImport && lastFileName && isNativeCadFileName(lastFileName) && !lastFileName.toLowerCase().endsWith('.dxf')) {
+      return lastCadImport;
+    }
+    if (/^\s*0\s*\nSECTION/im.test(input.value) || (lastFileName?.toLowerCase().endsWith('.dxf') ?? false)) {
+      return importCadText(input.value, lastFileName ?? 'paste.dxf');
+    }
     const parsed = parseBuildFile(input.value, lastFileName);
-    lastFormat = parsed.format;
-    renderIssues(parsed.issues);
+    return { format: parsed.format, nativeCad: false, parts: parsed.parts, issues: parsed.issues };
+  };
 
-    if (!parsed.parts.length) {
-      results.innerHTML = `<p class="cad-error">No parts found. Fix parse issues above or try another build file type.</p>`;
+  const run = async () => {
+    const imported = resolveImport();
+    lastFormat = imported.format;
+    renderIssues(imported.issues);
+
+    if (!imported.parts.length) {
+      const conv = imported.conversion
+        ? `<p class="muted">Recommended export: ${imported.conversion.preferredExports.map(escapeHtml).join(', ')}. ${escapeHtml(imported.conversion.recommend)}</p>`
+        : '';
+      results.innerHTML = `<p class="cad-error">No parts found. Fix parse issues above or try another build/CAD file type.</p>${conv}`;
       exportJsonBtn.disabled = true;
       exportCsvBtn.disabled = true;
       return;
     }
 
-    let parts = parsed.parts;
+    let parts = imported.parts;
     const heaterId = heaterSelect.value;
     if (heaterId) {
       parts = parts.map((p) => ({
@@ -231,7 +250,7 @@ avionics-bay,PMMA,30,near-heat`;
 
     const adj = parseAdjacency(adjInput.value);
     if (adj.issues.length) {
-      renderIssues([...parsed.issues, ...adj.issues]);
+      renderIssues([...imported.issues, ...adj.issues]);
     }
     lastEdges = adj.edges;
 
@@ -242,8 +261,9 @@ avionics-bay,PMMA,30,near-heat`;
     exportJsonBtn.disabled = false;
     exportCsvBtn.disabled = false;
 
+    const nativeNote = imported.nativeCad ? ' · native CAD import' : '';
     results.innerHTML = `
-      <p class="muted">Detected format: <strong>${escapeHtml(parsed.format)}</strong> · ${checked.length} parts · library ${MATERIALS_LIBRARY_VERSION}</p>
+      <p class="muted">Detected format: <strong>${escapeHtml(imported.format)}</strong>${nativeNote} · ${checked.length} parts · library ${MATERIALS_LIBRARY_VERSION}</p>
       <table class="cad-table">
         <caption class="sr-only">Flammability check results for ${escapeHtml(scenario.label)}</caption>
         <thead><tr><th>Material</th><th>Match</th><th>Level</th><th>Flags</th><th>Sources</th></tr></thead>
@@ -291,6 +311,7 @@ avionics-bay,PMMA,30,near-heat`;
 
   host.querySelector('.cad-sample')?.addEventListener('click', () => {
     lastFileName = undefined;
+    lastCadImport = null;
     defaultSample();
   });
   host.querySelector('.cad-run')!.addEventListener('click', () => void run());
@@ -299,6 +320,7 @@ avionics-bay,PMMA,30,near-heat`;
     const f = file.files?.[0];
     if (!f) return;
     lastFileName = f.name;
+    lastCadImport = null;
     if (f.name.toLowerCase().endsWith('.glb')) {
       input.value = '';
       renderIssues([
@@ -307,6 +329,15 @@ avionics-bay,PMMA,30,near-heat`;
           message: 'Binary .glb is not supported — use .gltf JSON or export a materials-tagged BOM.',
         },
       ]);
+      return;
+    }
+    if (isNativeCadFileName(f.name)) {
+      const imported = await importCadUpload(f);
+      lastCadImport = imported;
+      renderIssues(imported.issues);
+      // Preview extracted parts (or empty) as JSON so Check can run / user can edit
+      input.value = JSON.stringify(imported.parts, null, 2);
+      if (imported.parts.length) void run();
       return;
     }
     input.value = await f.text();
@@ -358,7 +389,14 @@ avionics-bay,PMMA,30,near-heat`;
     run,
     setBom: (text: string) => {
       lastFileName = undefined;
+      lastCadImport = null;
       input.value = text;
+    },
+    setCadImport: (imported: CadImportResult, fileName: string) => {
+      lastFileName = fileName;
+      lastCadImport = imported;
+      input.value = JSON.stringify(imported.parts, null, 2);
+      renderIssues(imported.issues);
     },
     setAdjacency: (text: string) => {
       adjInput.value = text;

@@ -1,4 +1,5 @@
 import type { BomPart } from './types';
+import { SAMPLE_HABITAT_COVER_DXF } from './sample-dxf';
 
 export interface DemoScenario {
   id: string;
@@ -8,6 +9,8 @@ export interface DemoScenario {
   whatToNotice: string[];
   parts: BomPart[];
   adjacencyCsv?: string;
+  /** When set, demo loads native CAD text (e.g. DXF) instead of BOM JSON. */
+  nativeCad?: { fileName: string; text: string };
 }
 
 /** Guided demo BOMs for the CAD Checker application tab. */
@@ -97,6 +100,28 @@ heater,Polyethylene,40,above`,
     ],
   },
 ];
+
+/** Extra guided demos that exercise native CAD importers (appended for UI). */
+export const NATIVE_CAD_DEMO_SCENARIOS: DemoScenario[] = [
+  {
+    id: 'dxf-habitat-cover',
+    title: 'DXF acrylic panel (native CAD)',
+    blurb:
+      'ASCII AutoCAD DXF with MATERIAL_PMMA / Aluminum / Nomex layers — extracted in-page with no download.',
+    atmosphereId: 'lunar',
+    whatToNotice: [
+      'DXF layers become BomPart rows automatically',
+      'PMMA still high-concern under lunar 34% O₂',
+      'Proprietary DWG/SLDPRT/… show conversion guidance when uploaded',
+    ],
+    parts: [],
+    nativeCad: { fileName: 'sample-habitat-cover.dxf', text: SAMPLE_HABITAT_COVER_DXF },
+    adjacencyCsv: `partA,partB,clearanceMm,relation
+Aluminum,PMMA,30,near-heat`,
+  },
+];
+
+export const ALL_DEMO_SCENARIOS: DemoScenario[] = [...DEMO_SCENARIOS, ...NATIVE_CAD_DEMO_SCENARIOS];
 
 export function sampleBomJson(parts: BomPart[]): string {
   return JSON.stringify(parts, null, 2);
