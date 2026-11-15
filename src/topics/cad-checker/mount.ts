@@ -11,6 +11,8 @@ import { sampleBomJson } from './samples';
 import { importCadText, importCadUpload, NATIVE_CAD_ACCEPT, isNativeCadFileName } from './importers/registry';
 import { adjacencyToCsv } from './importers/step-assembly';
 import { renderImportedPartsPreview } from './assembly-tree';
+import { mountPartPreview, type PartPreviewHandle } from './part-preview';
+import { parseGlbFile } from './glb';
 import type { CadImportResult } from './importers/types';
 
 export interface CadCheckerOptions {
@@ -28,7 +30,11 @@ export interface CadCheckerHandle {
   run: () => Promise<void>;
   setBom: (text: string) => void;
   setAdjacency: (text: string) => void;
-  setCadImport: (imported: CadImportResult, fileName: string) => void;
+  setCadImport: (
+    imported: CadImportResult,
+    fileName: string,
+    opts?: { gltfText?: string; glbBuffer?: ArrayBuffer },
+  ) => void;
 }
 
 export function mountCadChecker(
@@ -43,11 +49,14 @@ export function mountCadChecker(
   let lastFileName: string | undefined;
   /** Cached result from native CAD upload (especially proprietary binaries). */
   let lastCadImport: CadImportResult | null = null;
+  let lastGltfText: string | undefined;
+  let lastGlbBuffer: ArrayBuffer | undefined;
+  let meshPreview: PartPreviewHandle | null = null;
 
   const title = options.title ?? 'CAD / BOM flammability checker';
   const lead =
     options.lead ??
-    'Upload a BOM (<code>JSON</code>/<code>CSV</code>/…) or CAD (<code>DXF</code>, <code>STEP</code> assemblies with parent tree → adjacency; <code>DWG</code> via convert). SOLIDWORKS/Inventor/CATIA/NX·Creo detected with export guidance. Maps to the curated materials library.';
+    'Upload a BOM or CAD file (<code>DXF</code>, <code>STEP</code>, <code>glTF</code>/<code>GLB</code> with preview; <code>DWG</code> via convert). Proprietary CAD is detected with an export path. Maps to the curated materials library.';
 
   host.innerHTML = `
     <div class="cad-checker">
@@ -58,46 +67,61 @@ export function mountCadChecker(
         Library <code>${MATERIALS_LIBRARY_VERSION}</code> bands are method-/grade-dependent; open citations before design decisions.
         SI interprets flagged rows and must not invent uncited LOI/temps.
       </p>
-      <div class="cad-actions">
-        <label class="cad-file-label">Build / CAD / BOM file
-          <input type="file" accept="${ACCEPTED_BUILD_ACCEPT},${NATIVE_CAD_ACCEPT}" class="cad-file" />
-        </label>
-        <label class="cad-file-label">Adjacency file
-          <input type="file" accept=".csv,.tsv,.json,text/csv,application/json" class="cad-adj-file" />
-        </label>
-        ${
-          options.hideDefaultSample
-            ? ''
-            : '<button type="button" class="btn cad-sample">Load sample BOM</button>'
-        }
-        <label class="cad-heater-label">Apply heater preset to all rows
-          <select class="cad-heater-select">
-            <option value="">— none —</option>
-            ${HEATER_CATALOG.map(
-              (h) =>
-                `<option value="${h.id}">${escapeHtml(h.label)} (~${h.typicalSurfaceTempC}°C)</option>`,
-            ).join('')}
-          </select>
-        </label>
-        <button type="button" class="btn cad-run">Check against atmosphere</button>
+      <ol class="cad-flow" aria-label="Checker workflow">
+        <li>Upload or paste a build / CAD file</li>
+        <li>Review the imported tree / mesh preview</li>
+        <li>Confirm atmosphere, then check</li>
+      </ol>
+      <div class="cad-panel cad-panel-inputs">
+        <h3 class="cad-panel-title">Inputs</h3>
+        <div class="cad-actions">
+          <label class="cad-file-label">Build / CAD / BOM file
+            <input type="file" accept="${ACCEPTED_BUILD_ACCEPT},${NATIVE_CAD_ACCEPT}" class="cad-file" />
+          </label>
+          <label class="cad-file-label">Adjacency file
+            <input type="file" accept=".csv,.tsv,.json,text/csv,application/json" class="cad-adj-file" />
+          </label>
+          ${
+            options.hideDefaultSample
+              ? ''
+              : '<button type="button" class="btn cad-sample">Load sample BOM</button>'
+          }
+          <label class="cad-heater-label">Apply heater preset to all rows
+            <select class="cad-heater-select">
+              <option value="">— none —</option>
+              ${HEATER_CATALOG.map(
+                (h) =>
+                  `<option value="${h.id}">${escapeHtml(h.label)} (~${h.typicalSurfaceTempC}°C)</option>`,
+              ).join('')}
+            </select>
+          </label>
+          <button type="button" class="btn cad-run">Check against atmosphere</button>
+        </div>
+        <div class="cad-editors">
+          <label class="cad-editor-label">BOM / build text
+            <textarea class="cad-input" rows="10" spellcheck="false" placeholder='[{"material":"PMMA","maxExpectedTempC":50,"zone":"cabin"}]'></textarea>
+          </label>
+          <label class="cad-editor-label">Adjacency (optional)
+            <textarea class="cad-adjacency" rows="10" spellcheck="false" placeholder="partA,partB,clearanceMm,relation&#10;avionics,PMMA,25,near-heat"></textarea>
+          </label>
+        </div>
+        <div class="cad-parse-issues" aria-live="polite"></div>
       </div>
-      <div class="cad-editors">
-        <label class="cad-editor-label">BOM / build text
-          <textarea class="cad-input" rows="10" spellcheck="false" placeholder='[{"material":"PMMA","maxExpectedTempC":50,"zone":"cabin"}]'></textarea>
-        </label>
-        <label class="cad-editor-label">Adjacency (optional)
-          <textarea class="cad-adjacency" rows="10" spellcheck="false" placeholder="partA,partB,clearanceMm,relation&#10;avionics,PMMA,25,near-heat"></textarea>
-        </label>
+      <div class="cad-panel cad-panel-preview">
+        <h3 class="cad-panel-title">Import preview</h3>
+        <div class="cad-import-preview-host" aria-live="polite"></div>
       </div>
-      <div class="cad-parse-issues" aria-live="polite"></div>
-      <div class="cad-import-preview-host" aria-live="polite"></div>
-      <div class="cad-results" aria-live="polite"></div>
-      <div class="cad-actions cad-export-actions">
-        <button type="button" class="btn cad-export-json" disabled>Download results JSON</button>
-        <button type="button" class="btn cad-export-csv" disabled>Download results CSV</button>
+      <div class="cad-panel cad-panel-results">
+        <h3 class="cad-panel-title">Flammability results</h3>
+        <div class="cad-results" aria-live="polite"></div>
+        <div class="cad-actions cad-export-actions">
+          <button type="button" class="btn cad-export-json" disabled>Download results JSON</button>
+          <button type="button" class="btn cad-export-csv" disabled>Download results CSV</button>
+        </div>
+        <div class="cad-si"></div>
       </div>
-      <section class="cad-unknowns">
-        <h3>Unknown materials (session)</h3>
+      <section class="cad-unknowns cad-panel">
+        <h3 class="cad-panel-title">Unknown materials (session)</h3>
         <p class="muted">Captured misses for the next <code>materials-library.ts</code> data pass. Nothing is uploaded — copy or download JSON locally.</p>
         <ul class="cad-unknown-list"></ul>
         <div class="cad-actions">
@@ -106,7 +130,6 @@ export function mountCadChecker(
           <button type="button" class="btn cad-clear-unknowns" disabled>Clear session list</button>
         </div>
       </section>
-      <div class="cad-si"></div>
     </div>
   `;
 
@@ -222,8 +245,25 @@ avionics-bay,PMMA,30,near-heat`;
     }
   };
 
-  const showPartsPreview = (parts: BomPart[], meta?: { format?: string; fileName?: string }) => {
-    previewHost.innerHTML = renderImportedPartsPreview(parts, meta);
+  const showPartsPreview = (
+    parts: BomPart[],
+    meta?: { format?: string; fileName?: string; gltfText?: string; glbBuffer?: ArrayBuffer },
+  ) => {
+    meshPreview?.destroy();
+    meshPreview = null;
+    previewHost.innerHTML =
+      renderImportedPartsPreview(parts, meta) + `<div class="cad-mesh-preview-host"></div>`;
+    const meshHost = previewHost.querySelector<HTMLElement>('.cad-mesh-preview-host');
+    if (meshHost && parts.length) {
+      void mountPartPreview(meshHost, {
+        parts,
+        gltfText: meta?.gltfText ?? lastGltfText,
+        glbBuffer: meta?.glbBuffer ?? lastGlbBuffer,
+        fileName: meta?.fileName,
+      }).then((handle) => {
+        meshPreview = handle;
+      });
+    }
   };
 
   const resolveImport = (): CadImportResult => {
@@ -231,7 +271,11 @@ avionics-bay,PMMA,30,near-heat`;
     if (
       lastCadImport &&
       lastFileName &&
-      (isNativeCadFileName(lastFileName) || lower.endsWith('.step') || lower.endsWith('.stp') || lastCadImport.nativeCad) &&
+      (isNativeCadFileName(lastFileName) ||
+        lower.endsWith('.step') ||
+        lower.endsWith('.stp') ||
+        lower.endsWith('.glb') ||
+        lastCadImport.nativeCad) &&
       !lower.endsWith('.dxf')
     ) {
       return lastCadImport;
@@ -343,6 +387,8 @@ avionics-bay,PMMA,30,near-heat`;
   host.querySelector('.cad-sample')?.addEventListener('click', () => {
     lastFileName = undefined;
     lastCadImport = null;
+    lastGltfText = undefined;
+    lastGlbBuffer = undefined;
     defaultSample();
   });
   host.querySelector('.cad-run')!.addEventListener('click', () => void run());
@@ -352,14 +398,22 @@ avionics-bay,PMMA,30,near-heat`;
     if (!f) return;
     lastFileName = f.name;
     lastCadImport = null;
+    lastGltfText = undefined;
+    lastGlbBuffer = undefined;
     if (f.name.toLowerCase().endsWith('.glb')) {
-      input.value = '';
-      renderIssues([
-        {
-          severity: 'error',
-          message: 'Binary .glb is not supported — use .gltf JSON or export a materials-tagged BOM.',
-        },
-      ]);
+      const buffer = await f.arrayBuffer();
+      lastGlbBuffer = buffer;
+      const parsed = parseGlbFile(buffer, f.name);
+      lastCadImport = {
+        format: 'glb',
+        nativeCad: true,
+        parts: parsed.parts,
+        issues: parsed.issues,
+      };
+      input.value = JSON.stringify(parsed.parts, null, 2);
+      renderIssues(parsed.issues);
+      showPartsPreview(parsed.parts, { format: 'glb', fileName: f.name, glbBuffer: buffer });
+      if (parsed.parts.length) void run();
       return;
     }
     if (isNativeCadFileName(f.name) || /\.(step|stp)$/i.test(f.name)) {
@@ -374,11 +428,19 @@ avionics-bay,PMMA,30,near-heat`;
       return;
     }
     input.value = await f.text();
+    if (f.name.toLowerCase().endsWith('.gltf')) {
+      lastGltfText = input.value;
+    }
     const parsed = parseBuildFile(input.value, f.name);
     if (parsed.adjacency?.length) {
       adjInput.value = adjacencyToCsv(parsed.adjacency);
     }
-    showPartsPreview(parsed.parts, { format: parsed.format, fileName: f.name });
+    showPartsPreview(parsed.parts, {
+      format: parsed.format,
+      fileName: f.name,
+      gltfText: lastGltfText,
+    });
+    if (parsed.parts.length) void run();
   });
 
   adjFile.addEventListener('change', async () => {
@@ -422,21 +484,36 @@ avionics-bay,PMMA,30,near-heat`;
 
   return {
     destroy: () => {
+      meshPreview?.destroy();
+      meshPreview = null;
       host.innerHTML = '';
     },
     run,
     setBom: (text: string) => {
       lastFileName = undefined;
       lastCadImport = null;
+      lastGltfText = undefined;
+      lastGlbBuffer = undefined;
       input.value = text;
     },
-    setCadImport: (imported: CadImportResult, fileName: string) => {
+    setCadImport: (
+      imported: CadImportResult,
+      fileName: string,
+      opts?: { gltfText?: string; glbBuffer?: ArrayBuffer },
+    ) => {
       lastFileName = fileName;
       lastCadImport = imported;
+      lastGltfText = opts?.gltfText;
+      lastGlbBuffer = opts?.glbBuffer;
       input.value = JSON.stringify(imported.parts, null, 2);
       renderIssues(imported.issues);
       applyImportAdjacency(imported);
-      showPartsPreview(imported.parts, { format: imported.format, fileName });
+      showPartsPreview(imported.parts, {
+        format: imported.format,
+        fileName,
+        gltfText: lastGltfText,
+        glbBuffer: lastGlbBuffer,
+      });
     },
     setAdjacency: (text: string) => {
       adjInput.value = text;

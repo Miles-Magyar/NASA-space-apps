@@ -1,0 +1,227 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "Flame in Freefall"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "HabitatPanel",
+      "nodes": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "PMMA_Cover",
+      "mesh": 0,
+      "translation": [
+        0,
+        0.12,
+        0
+      ]
+    },
+    {
+      "name": "Aluminum_Frame",
+      "mesh": 1
+    },
+    {
+      "name": "Nomex_Liner",
+      "mesh": 2,
+      "translation": [
+        0,
+        -0.08,
+        0
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "PMMA",
+      "alphaMode": "BLEND",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.55,
+          0.78,
+          0.95,
+          0.65
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.2
+      }
+    },
+    {
+      "name": "Aluminum",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.78,
+          0.8,
+          0.84,
+          1
+        ],
+        "metallicFactor": 0.85,
+        "roughnessFactor": 0.35
+      }
+    },
+    {
+      "name": "Nomex",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.72,
+          0.55,
+          0.28,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.85
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "PMMA",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0
+          },
+          "indices": 1,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Aluminum",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 2
+          },
+          "indices": 3,
+          "material": 1
+        }
+      ]
+    },
+    {
+      "name": "Nomex",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 4
+          },
+          "indices": 5,
+          "material": 2
+        }
+      ]
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 8,
+      "type": "VEC3",
+      "min": [
+        -0.6000000238418579,
+        -0.05000000074505806,
+        -0.4000000059604645
+      ],
+      "max": [
+        0.6000000238418579,
+        0.05000000074505806,
+        0.4000000059604645
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 8,
+      "type": "VEC3",
+      "min": [
+        -0.699999988079071,
+        -0.03999999910593033,
+        -0.5
+      ],
+      "max": [
+        0.699999988079071,
+        0.03999999910593033,
+        0.5
+      ]
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 8,
+      "type": "VEC3",
+      "min": [
+        -0.550000011920929,
+        -0.029999999329447746,
+        -0.3499999940395355
+      ],
+      "max": [
+        0.550000011920929,
+        0.029999999329447746,
+        0.3499999940395355
+      ]
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 96
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 96,
+      "byteLength": 72
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 168,
+      "byteLength": 96
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 264,
+      "byteLength": 72
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 336,
+      "byteLength": 96
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 432,
+      "byteLength": 72
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 504,
+      "uri": "data:application/octet-stream;base64,mpkZv83MTL3NzMw+mpkZP83MTL3NzMw+mpkZP83MTD3NzMw+mpkZv83MTD3NzMw+mpkZv83MTL3NzMy+mpkZP83MTL3NzMy+mpkZP83MTD3NzMy+mpkZv83MTD3NzMy+AAABAAIAAAACAAMAAQAFAAYAAQAGAAIABQAEAAcABQAHAAYABAAAAAMABAADAAcAAwACAAYAAwAGAAcABAAFAAEABAABAAAAMzMzvwrXI70AAAA/MzMzPwrXI70AAAA/MzMzPwrXIz0AAAA/MzMzvwrXIz0AAAA/MzMzvwrXI70AAAC/MzMzPwrXI70AAAC/MzMzPwrXIz0AAAC/MzMzvwrXIz0AAAC/AAABAAIAAAACAAMAAQAFAAYAAQAGAAIABQAEAAcABQAHAAYABAAAAAMABAADAAcAAwACAAYAAwAGAAcABAAFAAEABAABAAAAzcwMv4/C9bwzM7M+zcwMP4/C9bwzM7M+zcwMP4/C9TwzM7M+zcwMv4/C9TwzM7M+zcwMv4/C9bwzM7O+zcwMP4/C9bwzM7O+zcwMP4/C9TwzM7O+zcwMv4/C9TwzM7O+AAABAAIAAAACAAMAAQAFAAYAAQAGAAIABQAEAAcABQAHAAYABAAAAAMABAADAAcAAwACAAYAAwAGAAcABAAFAAEABAABAAAA"
+    }
+  ]
+}

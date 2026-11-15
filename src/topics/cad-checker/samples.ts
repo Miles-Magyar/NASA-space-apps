@@ -12,6 +12,8 @@ export interface DemoScenario {
   adjacencyCsv?: string;
   /** When set, demo loads native CAD text (e.g. DXF) instead of BOM JSON. */
   nativeCad?: { fileName: string; text: string };
+  /** Fetch CAD/glTF from public URL (for large mesh samples). */
+  nativeCadUrl?: { fileName: string; url: string };
 }
 
 /** Guided demo BOMs for the CAD Checker application tab. */
@@ -135,6 +137,23 @@ Aluminum,PMMA,30,near-heat`,
     ],
     parts: [],
     nativeCad: { fileName: 'sample-sw-habitat-assy.step', text: SAMPLE_SW_HABITAT_ASSY_STEP },
+  },
+  {
+    id: 'gltf-habitat-panel',
+    title: 'glTF panel mesh preview',
+    blurb:
+      'Habitat cover as glTF meshes (PMMA / Aluminum / Nomex) — 3D preview in-page plus materials → checkBom. No download.',
+    atmosphereId: 'lunar',
+    whatToNotice: [
+      'Mesh preview renders the uploaded glTF geometry',
+      'Material names still drive flammability (PMMA high-concern in lunar O₂)',
+      'Use this path when CAD exports glTF alongside or instead of STEP',
+    ],
+    parts: [],
+    nativeCadUrl: {
+      fileName: 'sample-habitat-panel.gltf',
+      url: './samples/sample-habitat-panel.gltf',
+    },
   },
 ];
 
