@@ -43,12 +43,24 @@ function renderShell() {
 
       <aside id="topic-sidebar" class="sidebar" hidden>
         <div class="sidebar-inner">
-          <h2>Study Topics</h2>
           <nav>
+            <p class="sidebar-group-label">Start</p>
             <ul class="topic-list">
-              ${TOPICS.map(
-                (t) => `<li><a href="#${t.id}" data-topic="${t.id}">${t.title}</a></li>`,
-              ).join('')}
+              ${TOPICS.filter((t) => t.kind === 'general' || t.kind === 'catalog' || t.kind === 'synthesis')
+                .map((t) => `<li><a href="#${t.id}" data-topic="${t.id}">${t.title}</a></li>`)
+                .join('')}
+            </ul>
+            <p class="sidebar-group-label">Tools</p>
+            <ul class="topic-list">
+              ${TOPICS.filter((t) => t.kind === 'tool')
+                .map((t) => `<li><a href="#${t.id}" data-topic="${t.id}">${t.title}</a></li>`)
+                .join('')}
+            </ul>
+            <p class="sidebar-group-label">Study topics</p>
+            <ul class="topic-list">
+              ${TOPICS.filter((t) => t.kind === 'mission')
+                .map((t) => `<li><a href="#${t.id}" data-topic="${t.id}">${t.title}</a></li>`)
+                .join('')}
             </ul>
           </nav>
         </div>
@@ -141,6 +153,7 @@ function renderGeneral(main: HTMLElement) {
         <h1 class="hero-title">Flame in Freefall</h1>
         <img class="match-flame" src="${flameUrl}" width="64" height="64" alt="" />
         <p class="hero-sub">SI-powered fire safety insights from microgravity combustion data</p>
+        <p class="scroll-hint" aria-hidden="true">Scroll</p>
       </section>
       <div class="sun-panel" aria-hidden="true">
         <img src="${starUrl}" alt="" />

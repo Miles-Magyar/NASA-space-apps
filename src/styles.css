@@ -162,7 +162,8 @@ img {
 }
 
 .menu-btn:hover .menu-label,
-.menu-btn:focus-visible .menu-label {
+.menu-btn:focus-visible .menu-label,
+.app-chrome.is-visible .menu-label {
   max-width: 8rem;
   opacity: 1;
 }
@@ -258,6 +259,18 @@ img {
   margin: 0 0 1rem;
 }
 
+.sidebar-group-label {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.sidebar-group-label:first-child {
+  margin-top: 0;
+}
+
 .topic-list {
   list-style: none;
   margin: 0;
@@ -333,6 +346,84 @@ img {
   max-width: 28rem;
   color: var(--cream-dim);
   opacity: calc(1 - var(--intro-progress) * 1.2);
+}
+
+.scroll-hint {
+  margin: 2.5rem 0 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  opacity: calc(0.75 - var(--intro-progress) * 1.2);
+  animation: scroll-hint-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes scroll-hint-pulse {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint {
+    animation: none;
+  }
+}
+
+.purpose-lede {
+  font-size: 1.15rem;
+  max-width: 40rem;
+}
+
+.purpose-steps {
+  margin: 0.75rem 0 1.1rem;
+  padding-left: 1.25rem;
+  color: var(--cream-faint);
+  max-width: 40rem;
+}
+
+.purpose-steps li {
+  margin-bottom: 0.45rem;
+}
+
+.purpose-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.cta-btn {
+  display: inline-block;
+  padding: 0.65rem 0.95rem;
+  border: 1px solid var(--line);
+  color: var(--cream);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.cta-btn:hover,
+.cta-btn:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.cta-btn.cta-primary {
+  border-color: var(--accent);
+  background: rgba(217, 160, 102, 0.16);
+}
+
+.purpose-note {
+  color: var(--cream-dim);
+  font-size: 0.95rem;
+  max-width: 40rem;
 }
 
 .sun-panel {
@@ -672,6 +763,17 @@ img {
   overflow-x: auto;
   background: rgba(10, 10, 10, 0.95);
   border: 1px solid var(--line);
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrap::after {
+  content: 'Scroll sideways for more columns →';
+  display: block;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.78rem;
+  color: var(--cream-dim);
+  border-top: 1px solid var(--line);
 }
 
 .evidence-table {
@@ -679,6 +781,14 @@ img {
   border-collapse: collapse;
   font-size: 0.92rem;
   white-space: nowrap;
+}
+
+.evidence-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #181818;
+  box-shadow: 0 1px 0 var(--line);
 }
 
 .evidence-table th,
@@ -896,16 +1006,15 @@ img {
   color: var(--cream-faint);
 }
 
-.cad-demo-howto,
 .cad-demo-scenarios,
-.cad-demo-atmosphere {
+.cad-demo-atmosphere,
+.cad-demo-advanced {
   margin: 1.5rem 0;
   padding: 1rem 1.1rem;
-  background: rgba(12, 12, 12, 0.88);
+  background: rgba(12, 12, 12, 0.92);
   border: 1px solid var(--line);
 }
 
-.cad-demo-howto h2,
 .cad-demo-scenarios h2,
 .cad-demo-atmosphere h2 {
   font-family: var(--font-display);
@@ -913,16 +1022,47 @@ img {
   margin: 0 0 0.75rem;
 }
 
-.cad-demo-howto ol {
-  margin: 0 0 0.75rem;
-  padding-left: 1.25rem;
+.cad-demo-hint {
+  margin: 0 0 0.85rem;
   color: var(--cream-faint);
-  max-width: 48rem;
+}
+
+.cad-demo-advanced summary {
+  cursor: pointer;
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+
+.cad-demo-advanced[open] summary {
+  margin-bottom: 0.75rem;
 }
 
 .schema-note {
   font-size: 0.92rem;
   color: var(--cream-faint);
+}
+
+.start-here {
+  margin: 0.85rem 0 0;
+  max-width: 42rem;
+  color: var(--cream-faint);
+  padding: 0.65rem 0.75rem;
+  border-left: 2px solid var(--accent);
+  background: rgba(217, 160, 102, 0.08);
+}
+
+.start-here a {
+  color: var(--accent);
+}
+
+.controls-eyebrow {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .cad-demo-grid {
@@ -1148,6 +1288,22 @@ img {
   flex-direction: column;
   background: #101010;
   border: 1px solid var(--line);
+}
+
+/* Author display:flex would otherwise keep the panel visible despite [hidden]. */
+.helpbot-panel[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 720px) {
+  .helpbot-panel {
+    position: fixed;
+    inset: auto 0.5rem 4.25rem 0.5rem;
+    width: auto;
+    height: min(52vh, 24rem);
+    bottom: 4.25rem;
+    right: 0.5rem;
+  }
 }
 
 .helpbot-panel header {

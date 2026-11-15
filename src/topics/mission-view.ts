@@ -95,15 +95,19 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       <p class="eyebrow">Study topic</p>
       <h1>${data.title}</h1>
       <p class="lede">${data.intro}</p>
+      <p class="start-here">
+        <strong>Start here:</strong> choose an atmosphere below, read the best-fit suggestion, then scan the evidence table.
+        ${
+          data.topicId === 'cabin-fire-safety'
+            ? ' For a BOM demo, open <a href="#cad-checker">CAD Checker</a>.'
+            : data.topicId === 'viable-materials'
+              ? ' Temperature degradation for CAD materials is below the ranking.'
+              : ''
+        }
+      </p>
     </header>
-    <section class="si-panel" aria-live="polite">
-      <div class="si-panel-head">
-        <h2>SI summary</h2>
-        <button type="button" class="btn si-refresh">Summarize for atmosphere</button>
-      </div>
-      <p class="si-body">Select an atmosphere and click summarize. Answers are grounded in this topic’s curated rows and citations.</p>
-    </section>
     <section class="mission-controls">
+      <p class="controls-eyebrow">1 · Atmosphere &amp; filters</p>
       <label>Atmosphere
         <select class="scenario-select"></select>
       </label>
@@ -123,14 +127,21 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       </label>
       <p class="scenario-notes"></p>
     </section>
+    <section class="si-panel" aria-live="polite">
+      <div class="si-panel-head">
+        <h2>SI summary</h2>
+        <button type="button" class="btn si-refresh">Summarize for atmosphere</button>
+      </div>
+      <p class="si-body">Optional: summarize the ranked evidence for this atmosphere. Answers stay grounded in this topic’s curated rows and citations.</p>
+    </section>
     <section class="safety-fit-panel" aria-live="polite">
-      <p class="eyebrow">Heuristic suggestion</p>
+      <p class="eyebrow">2 · Heuristic suggestion</p>
       <h2>Best fit for safety regulations</h2>
       <div class="safety-fit-body"></div>
     </section>
     <section class="ranking-panel">
       <div class="ranking-head">
-        <h2>Evidence triage ranking</h2>
+        <h2>3 · Evidence triage ranking</h2>
         <label class="ranking-sort-label">Sort by
           <select class="ranking-sort">
             <option value="triage">Overall triage</option>
@@ -145,7 +156,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     </section>
     <section class="fuels-data-panel">
       <header class="fuels-data-head">
-        <h2>${isFuels ? 'Comprehensive fuels data' : 'Evidence data table'}</h2>
+        <h2>${isFuels ? '4 · Comprehensive fuels data' : '4 · Evidence data table'}</h2>
         <p class="fuels-data-lede">
           ${
             isFuels
