@@ -8,6 +8,7 @@ import { initReadingScroll, type ReadingScrollHandles } from './topics/general/r
 import { getMission } from './topics/mission-data';
 import { renderMissionView, type MissionViewState } from './topics/mission-view';
 import { renderInvestigationsCatalog } from './topics/investigations/catalog';
+import { renderCadCheckerDemo, type CadDemoState } from './topics/cad-checker/demo';
 import { mountHelpbot } from './helpbot';
 import { searchCorpus } from './search';
 
@@ -17,6 +18,7 @@ const app = document.querySelector<HTMLElement>('#app')!;
 
 let reading: ReadingScrollHandles | null = null;
 let missionView: MissionViewState | null = null;
+let cadDemo: CadDemoState | null = null;
 let helpbotHandle: { destroy: () => void } | null = null;
 let menuButton: HTMLButtonElement | null = null;
 
@@ -194,6 +196,8 @@ function renderTopic(topicId: string) {
   reading = null;
   missionView?.destroy();
   missionView = null;
+  cadDemo?.destroy();
+  cadDemo = null;
 
   const main = app.querySelector<HTMLElement>('#main')!;
   const shell = app.querySelector('.app-shell')!;
@@ -221,6 +225,13 @@ function renderTopic(topicId: string) {
   if (topic.kind === 'catalog') {
     main.innerHTML = `<div class="mission-root"></div>`;
     renderInvestigationsCatalog(main.querySelector('.mission-root')!);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+
+  if (topic.kind === 'tool' && topicId === 'cad-checker') {
+    main.innerHTML = `<div class="mission-root"></div>`;
+    cadDemo = renderCadCheckerDemo(main.querySelector('.mission-root')!);
     window.scrollTo({ top: 0, behavior: 'auto' });
     return;
   }

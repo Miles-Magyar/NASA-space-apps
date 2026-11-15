@@ -26,11 +26,19 @@ export const TOPICS: TopicDefinition[] = [
     kind: 'synthesis',
   },
   {
+    id: 'cad-checker',
+    title: 'CAD Checker',
+    shortTitle: 'CAD Checker',
+    description:
+      'Interactive demo of the BOM flammability checker: load habitat/suit/rover sample parts, compare against mission atmospheres, and export unknown materials.',
+    kind: 'tool',
+  },
+  {
     id: 'viable-materials',
     title: 'Viable Materials',
     shortTitle: 'Materials',
     description:
-      'Solid materials flammability from BASS, SoFIE, Saffire, and lunar FM2 pathways.',
+      'Solid materials flammability from BASS, SoFIE, Saffire, and lunar FM2 pathways — plus CAD temperature-degradation compilation.',
     kind: 'mission',
   },
   {

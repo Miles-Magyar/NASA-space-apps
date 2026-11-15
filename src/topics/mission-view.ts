@@ -228,15 +228,20 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
         })()
       : null;
 
-  const cadHost =
-    data.topicId === 'cabin-fire-safety'
-      ? (() => {
-          const el = document.createElement('section');
-          el.className = 'cad-host';
-          container.appendChild(el);
-          return el;
-        })()
-      : null;
+  if (data.topicId === 'cabin-fire-safety') {
+    const el = document.createElement('section');
+    el.className = 'cad-teaser';
+    el.innerHTML = `
+      <p class="eyebrow">Application</p>
+      <h2>CAD / BOM flammability checker</h2>
+      <p>
+        The interactive demo now lives on its own tab: load lunar/EMU/rover sample BOMs,
+        switch atmospheres, and export unknown materials for the next library pass.
+      </p>
+      <p><a class="btn" href="#cad-checker">Open CAD Checker demo</a></p>
+    `;
+    container.appendChild(el);
+  }
 
   function visibleRows(): MissionRow[] {
     const q = filter.trim().toLowerCase();
@@ -463,12 +468,6 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     });
   }
 
-  if (cadHost) {
-    import('./cabin-fire-safety/cad-checker').then(({ mountCadChecker }) => {
-      const handle = mountCadChecker(cadHost, () => scenarioById(scenarioId)!);
-      destroyFns.push(() => handle.destroy());
-    });
-  }
 
   return {
     destroy: () => destroyFns.forEach((fn) => fn()),

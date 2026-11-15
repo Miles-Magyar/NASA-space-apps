@@ -36,7 +36,7 @@ export const OVERVIEW_SECTIONS: OverviewSection[] = [
     heading: 'Turning physics into mission fire safety',
     paragraphs: [],
     html: `<p>Exploration atmospheres trade EVA pre-breathe time against flammability: lunar habitat references near <strong>34% O₂ and 8.2 psia</strong> sit between ISS air and EMU pure oxygen. Partial-gravity combustion data remain sparse in PSI — programs like <a href="#investigations" data-study="fm2"><strong>FM2</strong></a> aim to close that gap.</p>
-<p>This dashboard ranks sourced evidence for the atmosphere you select, summarizes it with SI grounded in the curated corpus, and checks build materials against flash/autoignition and oxygen limits. Start with <a href="#cabin-fire-safety"><strong>Cabin Fire Safety</strong></a> for the end-to-end path, or open <a href="#fuels"><strong>Fuels</strong></a> for the full measurement matrix.</p>`,
+<p>This dashboard ranks sourced evidence for the atmosphere you select, summarizes it with SI grounded in the curated corpus, and checks build materials against flash/autoignition and oxygen limits. Start with <a href="#cabin-fire-safety"><strong>Cabin Fire Safety</strong></a> for the end-to-end path, try the <a href="#cad-checker"><strong>CAD Checker</strong></a> demo on sample BOMs, or open <a href="#fuels"><strong>Fuels</strong></a> for the full measurement matrix.</p>`,
   },
   {
     id: 'earth-benefits',

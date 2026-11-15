@@ -161,23 +161,44 @@ export interface UnknownMaterialCapture {
   scenarioLabel: string;
 }
 
+export interface CadCheckerOptions {
+  title?: string;
+  lead?: string;
+  /** Initial BOM text; defaults to compact sample. */
+  initialBom?: string;
+  /** Run check once after mount when BOM + scenario are ready. */
+  autoRun?: boolean;
+  /** Hide the default “Load sample BOM” control (demo page supplies scenarios). */
+  hideDefaultSample?: boolean;
+  topicId?: string;
+}
+
 export function mountCadChecker(
   host: HTMLElement,
   getScenario: () => ScenarioPreset,
-): { destroy: () => void } {
+  options: CadCheckerOptions = {},
+): { destroy: () => void; run: () => Promise<void>; setBom: (text: string) => void } {
   /** Session list of unknown materials for the next materials-library pass. */
   const unknownSession: UnknownMaterialCapture[] = [];
+  const title = options.title ?? 'CAD / BOM flammability checker';
+  const lead =
+    options.lead ??
+    'Upload a CSV/JSON BOM with <code>material</code>, optional <code>nearbyFuel</code>, <code>maxExpectedTempC</code>, and <code>zone</code> (cabin | eva-suit | propellant-bay). Maps to the curated materials library — not a SolidWorks kernel.';
 
   host.innerHTML = `
     <div class="cad-checker">
-      <h2>CAD / BOM flammability checker</h2>
-      <p>Upload a CSV/JSON BOM with <code>material</code>, optional <code>nearbyFuel</code>, <code>maxExpectedTempC</code>, and <code>zone</code> (cabin | eva-suit | propellant-bay). Maps to the curated materials library — not a SolidWorks kernel.</p>
+      <h2>${title}</h2>
+      <p>${lead}</p>
       <div class="cad-actions">
         <input type="file" accept=".csv,.json,text/csv,application/json" class="cad-file" />
-        <button type="button" class="btn cad-sample">Load sample BOM</button>
+        ${
+          options.hideDefaultSample
+            ? ''
+            : '<button type="button" class="btn cad-sample">Load sample BOM</button>'
+        }
         <button type="button" class="btn cad-run">Check against atmosphere</button>
       </div>
-      <textarea class="cad-input" rows="8" spellcheck="false" placeholder='[{"material":"PMMA","nearbyFuel":"n-heptane","maxExpectedTempC":50,"zone":"cabin"}]'></textarea>
+      <textarea class="cad-input" rows="10" spellcheck="false" placeholder='[{"material":"PMMA","nearbyFuel":"n-heptane","maxExpectedTempC":50,"zone":"cabin"}]'></textarea>
       <div class="cad-results" aria-live="polite"></div>
       <section class="cad-unknowns">
         <h3>Unknown materials (session)</h3>
@@ -249,19 +270,21 @@ export function mountCadChecker(
     renderUnknowns();
   };
 
-  const sample = () => {
-    input.value = JSON.stringify(
-      [
-        { material: 'PMMA', nearbyFuel: 'n-heptane', maxExpectedTempC: 60, zone: 'cabin' },
-        { material: 'Nomex', zone: 'cabin' },
-        { material: 'Stainless steel', zone: 'cabin' },
-        { material: 'mystery-foam', zone: 'cabin' },
-        { material: 'ABS', nearbyFuel: 'methanol', maxExpectedTempC: 20, zone: 'cabin' },
-        { material: 'PTFE', zone: 'eva-suit' },
-      ],
-      null,
-      2,
-    );
+  const defaultSample = () => {
+    input.value =
+      options.initialBom ??
+      JSON.stringify(
+        [
+          { material: 'PMMA', nearbyFuel: 'n-heptane', maxExpectedTempC: 60, zone: 'cabin' },
+          { material: 'Nomex', zone: 'cabin' },
+          { material: 'Stainless steel', zone: 'cabin' },
+          { material: 'mystery-foam', zone: 'cabin' },
+          { material: 'ABS', nearbyFuel: 'methanol', maxExpectedTempC: 20, zone: 'cabin' },
+          { material: 'PTFE', zone: 'eva-suit' },
+        ],
+        null,
+        2,
+      );
   };
 
   const run = async () => {
@@ -302,7 +325,7 @@ export function mountCadChecker(
     const concerns = checked.filter((c) => c.level === 'high-concern' || c.level === 'review' || c.level === 'unknown');
     si.textContent = 'Generating SI note…';
     si.innerHTML = await requestSummary({
-      topicId: 'cabin-fire-safety',
+      topicId: options.topicId ?? 'cad-checker',
       topicTitle: 'BOM flammability check',
       scenarioLabel: scenario.label,
       scenarioNotes: scenario.notes,
@@ -315,7 +338,7 @@ export function mountCadChecker(
     });
   };
 
-  const onSample = () => sample();
+  const onSample = () => defaultSample();
   const onRun = () => void run();
   const onFile = async () => {
     const f = file.files?.[0];
@@ -347,18 +370,23 @@ export function mountCadChecker(
     renderUnknowns();
   };
 
-  host.querySelector('.cad-sample')!.addEventListener('click', onSample);
+  host.querySelector('.cad-sample')?.addEventListener('click', onSample);
   host.querySelector('.cad-run')!.addEventListener('click', onRun);
   file.addEventListener('change', onFile);
   copyBtn.addEventListener('click', () => void onCopy());
   downloadBtn.addEventListener('click', onDownload);
   clearBtn.addEventListener('click', onClear);
-  sample();
+  defaultSample();
   renderUnknowns();
+  if (options.autoRun) void run();
 
   return {
     destroy: () => {
       host.innerHTML = '';
+    },
+    run,
+    setBom: (text: string) => {
+      input.value = text;
     },
   };
 }

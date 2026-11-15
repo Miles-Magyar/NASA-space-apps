@@ -9,10 +9,10 @@ An SI-powered dashboard that ranks and interprets NASA microgravity combustion e
 1. **General** — Scroll the freefall narrative (Earth → µg → orbital lab including SPICE/SLICE → mission safety → Earth benefits). Note the SoFIE feature and Investigations link.
 2. **Investigations** — Open FLEX / BASS / Saffire / SAME cards; show PSI links.
 3. **Viable Materials** — Open the **temperature degradation & flammability** compilation (PMMA melt/LOI, Nomex, PTFE, metals) and the CAD vulnerability analysis plan.
-4. **Cabin Fire Safety** — Switch ISS vs lunar atmosphere; show **Best fit for safety regulations**, triage ranking (try sort modes), playbooks, and BOM checker (temp + LOI flags; export unknowns).
-5. **Fuels** — Atmosphere selector → comprehensive table → five plots; point out cabin vs propulsion groups.
-6. **Helpbot** — Ask “Saffire flame spread” or “Nomex oxygen limit”; confirm a cited reply (Gemini if `GEMINI_API_KEY` is set; otherwise corpus fallback).
-7. **CAD/BOM checker** — Load sample BOM → Check → show PMMA high-concern + mystery-foam unknown → **Copy/Download unknowns JSON**.
+4. **Cabin Fire Safety** — Switch ISS vs lunar atmosphere; show **Best fit for safety regulations**, triage ranking (try sort modes), and the link into the CAD Checker tab.
+5. **CAD Checker** — Open the dedicated demo tab; run **Lunar habitat acrylic**, **EMU soft-goods**, and **Rover cabin** guided scenarios; show pass/review/high-concern/unknown + **Copy/Download unknowns JSON**.
+6. **Fuels** — Atmosphere selector → comprehensive table → five plots; point out cabin vs propulsion groups.
+7. **Helpbot** — Ask “Saffire flame spread” or “Nomex oxygen limit”; confirm a cited reply (Gemini if `GEMINI_API_KEY` is set; otherwise corpus fallback).
 
 ## How SI was used
 
