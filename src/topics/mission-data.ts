@@ -6,7 +6,7 @@ const viableMaterials: MissionDataset = {
   topicId: 'viable-materials',
   title: 'Viable Materials',
   intro:
-    'Solid materials screened for cabin use: PMMA, Nomex, SIBAL fabrics, and related SoFIE/BASS/Saffire/FM2 evidence. Oxygen index and flame-spread results are method-specific — compare against the selected habitat atmosphere rather than a single pass/fail.',
+    'Solid materials screened for cabin use: PMMA, Nomex, SIBAL fabrics, and related SoFIE/BASS/Saffire/FM2 evidence. This topic also hosts the CAD materials compilation — melting, softening, decomposition, LOI, and oxygen-compatibility landmarks from cited NASA studies — plus the plan for analyzing CAD designs for fire vulnerabilities. Oxygen index and flame-spread results are method-specific — compare against the selected habitat atmosphere rather than a single pass/fail.',
   showEarthScenario: false,
   rows: [
     {
@@ -247,8 +247,20 @@ const viableMaterials: MissionDataset = {
       sources: [
         { label: 'NASA Nomex O₂ tests', url: 'https://ntrs.nasa.gov/citations/20080034883' },
         { label: 'BASS-II', url: 'https://ntrs.nasa.gov/citations/20210011385' },
+        { label: 'NASA textile O₂ chart', url: 'https://ntrs.nasa.gov/citations/20170008880' },
       ],
       tags: ['playbook', 'fabric'],
+    },
+    {
+      id: 'vm-temp-degradation',
+      title: 'Temperature-degradation reading order',
+      body: 'For CAD parts: compare expected local temperature to continuous-use, then softening/Tg, then melt/flow, then AIT. Softening often disables the part before flaming. Pair with LOI vs habitat O₂ and oxygen-compatibility for O₂-wetted zones. Use the compilation table on this page and docs/CAD_FIRE_VULNERABILITY_PLAN.md.',
+      sources: [
+        { label: 'NASA thermoplastics flammability', url: 'https://ntrs.nasa.gov/citations/19780065784' },
+        { label: 'NASA O₂ ignition study', url: 'https://ntrs.nasa.gov/citations/20090001157' },
+        { label: 'NASA oxygen compatibility', url: 'https://ntrs.nasa.gov/citations/20070016582' },
+      ],
+      tags: ['playbook', 'CAD', 'temperature'],
     },
   ],
 };

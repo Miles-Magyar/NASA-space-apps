@@ -859,6 +859,50 @@ img {
   cursor: not-allowed;
 }
 
+.materials-compilation,
+.cad-plan-panel {
+  background: rgba(12, 12, 12, 0.92);
+  border: 1px solid var(--line);
+  padding: 1rem 1.1rem;
+  margin: 1.25rem 0;
+}
+
+.materials-compilation h2,
+.cad-plan-panel h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  margin: 0 0 0.65rem;
+}
+
+.materials-temp-table .o2-prefer {
+  color: var(--ok);
+}
+
+.materials-temp-table .o2-review {
+  color: var(--warn);
+}
+
+.materials-temp-table .o2-high-concern {
+  color: var(--danger);
+}
+
+.cad-plan-steps {
+  margin: 0.75rem 0 1rem;
+  padding-left: 1.25rem;
+  color: var(--cream-faint);
+  max-width: 52rem;
+}
+
+.cad-plan-steps li {
+  margin-bottom: 0.65rem;
+}
+
+.cad-plan-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
 .cad-table {
   width: 100%;
   border-collapse: collapse;

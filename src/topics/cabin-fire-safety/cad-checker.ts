@@ -90,6 +90,36 @@ export function checkBom(parts: BomPart[], scenario: ScenarioPreset): CheckResul
       if (mat.oxygenCompatibility === 'high-concern') level = 'high-concern';
     }
 
+    if (mat && part.maxExpectedTempC != null) {
+      const soft = mat.softeningC?.value ?? mat.softeningC?.min ?? mat.glassTransitionC?.value ?? mat.glassTransitionC?.min;
+      const melt = mat.meltingC?.value ?? mat.meltingC?.min;
+      const use = mat.continuousUseC?.value ?? mat.continuousUseC?.min;
+      if (use != null && part.maxExpectedTempC >= use) {
+        flags.push(
+          `Expected temp ${part.maxExpectedTempC}°C reaches/exceeds continuous-use band ~${use}°C for ${mat.name}`,
+        );
+        if (level === 'pass') level = 'review';
+      }
+      if (soft != null && part.maxExpectedTempC >= soft) {
+        flags.push(
+          `Expected temp ${part.maxExpectedTempC}°C reaches softening/Tg band ~${soft}°C for ${mat.name}`,
+        );
+        level = level === 'high-concern' ? level : 'review';
+      }
+      if (melt != null && part.maxExpectedTempC >= melt) {
+        flags.push(
+          `Expected temp ${part.maxExpectedTempC}°C reaches melt/flow onset ~${melt}°C for ${mat.name}`,
+        );
+        level = 'high-concern';
+      }
+      if (mat.autoignitionC != null && part.maxExpectedTempC >= mat.autoignitionC * 0.8) {
+        flags.push(
+          `Expected temp ${part.maxExpectedTempC}°C within 20% of ${mat.name} autoignition ${mat.autoignitionC}°C`,
+        );
+        if (level !== 'high-concern') level = 'review';
+      }
+    }
+
     if (fuel && part.maxExpectedTempC != null) {
       if (fuel.flashPointC != null && part.maxExpectedTempC >= fuel.flashPointC) {
         flags.push(

@@ -41,7 +41,7 @@ Static-only hosting (e.g. Porkbun): upload the contents of `dist/`. Hash routes 
 
 General · **Investigations** · Cabin Fire Safety · Viable Materials · Fuels · Spacesuits · Spacecraft · Engines · Fuel Storage · Rovers
 
-Cabin Fire Safety includes the CAD/BOM flammability checker (CSV/JSON materials mapped to the curated library, with session export of unknown materials).
+**Viable Materials** hosts the CAD materials temperature-degradation & flammability compilation (melting, softening, LOI, O₂ compatibility) and the CAD fire-vulnerability analysis plan. Cabin Fire Safety runs the BOM checker (CSV/JSON → library flags + unknown-materials export). See `docs/CAD_FIRE_VULNERABILITY_PLAN.md`.
 
 ## Submission kit
 

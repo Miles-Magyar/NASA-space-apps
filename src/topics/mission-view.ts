@@ -211,6 +211,23 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     plotsHost.hidden = false;
   }
 
+  const materialsHost =
+    data.topicId === 'viable-materials'
+      ? (() => {
+          const wrap = document.createElement('div');
+          wrap.className = 'materials-extra';
+          const tableHost = document.createElement('div');
+          tableHost.className = 'materials-compilation-host';
+          const planHost = document.createElement('div');
+          planHost.className = 'cad-plan-host';
+          wrap.append(tableHost, planHost);
+          // Place compilation before the evidence table for materials-first reading.
+          const ranking = container.querySelector('.ranking-panel');
+          ranking?.after(wrap);
+          return { tableHost, planHost };
+        })()
+      : null;
+
   const cadHost =
     data.topicId === 'cabin-fire-safety'
       ? (() => {
@@ -438,6 +455,13 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
   destroyFns.push(() => siBtn.removeEventListener('click', onSi));
 
   render();
+
+  if (materialsHost) {
+    import('./viable-materials/materials-panel').then(({ renderMaterialsCompilation, renderCadVulnerabilityPlan }) => {
+      renderMaterialsCompilation(materialsHost.tableHost);
+      renderCadVulnerabilityPlan(materialsHost.planHost);
+    });
+  }
 
   if (cadHost) {
     import('./cabin-fire-safety/cad-checker').then(({ mountCadChecker }) => {

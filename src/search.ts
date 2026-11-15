@@ -124,13 +124,16 @@ export function searchCorpus(query: string, limit = 12): SearchHit[] {
     const s =
       scoreText(mat.name, toks) * 3 +
       scoreText(mat.aliases.join(' '), toks) * 2 +
-      scoreText(mat.notes, toks);
+      scoreText(mat.notes, toks) +
+      scoreText(mat.flammabilityNotes, toks) +
+      scoreText(mat.temperatureDegradationNotes, toks) +
+      scoreText(mat.cadUse, toks);
     if (s > 0) {
       hits.push({
         score: s + 2,
         title: mat.name,
-        snippet: mat.notes,
-        href: '#cabin-fire-safety',
+        snippet: mat.flammabilityNotes || mat.notes,
+        href: '#viable-materials',
         kind: 'Material',
       });
     }
