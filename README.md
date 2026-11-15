@@ -41,7 +41,12 @@ Static-only hosting (e.g. Porkbun): upload the contents of `dist/`. Hash routes 
 
 General · **Investigations** · Cabin Fire Safety · Viable Materials · Fuels · Spacesuits · Spacecraft · Engines · Fuel Storage · Rovers
 
-**CAD Checker** (`#cad-checker`) is a dedicated application tab with guided BOM demos (lunar acrylic, EMU soft goods, rover cabin, propellant bay). **Viable Materials** hosts the temperature-degradation & flammability compilation and analysis plan. See `docs/CAD_FIRE_VULNERABILITY_PLAN.md`.
+**CAD Checker** (`#cad-checker`) is a dedicated application tab with guided demos and multi-format build intake (`JSON`, `CSV`, `TSV`, `NDJSON`, `XML`, `glTF`, `STEP`), heater presets, adjacency flags, and cited report export. **Viable Materials** hosts the temperature-degradation compilation and analysis plan. See `docs/CAD_FIRE_VULNERABILITY_PLAN.md`.
+
+```bash
+npm test    # Vitest: parse + checkBom + adjacency
+npm run check && npm run build
+```
 
 ## Submission kit
 

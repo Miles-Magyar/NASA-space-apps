@@ -1,4 +1,4 @@
-import type { BomPart } from '../cabin-fire-safety/cad-checker';
+import type { BomPart } from './types';
 
 export interface DemoScenario {
   id: string;
@@ -7,6 +7,7 @@ export interface DemoScenario {
   atmosphereId: 'iss' | 'emu' | 'lunar' | 'mars';
   whatToNotice: string[];
   parts: BomPart[];
+  adjacencyCsv?: string;
 }
 
 /** Guided demo BOMs for the CAD Checker application tab. */
@@ -23,12 +24,15 @@ export const DEMO_SCENARIOS: DemoScenario[] = [
       'Nearby n-heptane flash is far below cabin temps if a liquid surrogate is present',
     ],
     parts: [
-      { material: 'PMMA', nearbyFuel: 'n-heptane', maxExpectedTempC: 60, zone: 'cabin' },
+      { id: 'cover-1', material: 'PMMA', nearbyFuel: 'n-heptane', zone: 'cabin', heaterId: 'avionics-bay' },
       { material: 'Nomex', maxExpectedTempC: 40, zone: 'cabin' },
-      { material: 'Aluminum', maxExpectedTempC: 80, zone: 'cabin' },
-      { material: 'Epoxy', maxExpectedTempC: 95, zone: 'cabin' },
+      { id: 'avionics', material: 'Aluminum', maxExpectedTempC: 80, zone: 'cabin', heaterId: 'avionics-bay' },
+      { material: 'Epoxy', heaterId: 'power-electronics', zone: 'cabin' },
       { material: 'mystery-foam', maxExpectedTempC: 50, zone: 'cabin' },
     ],
+    adjacencyCsv: `partA,partB,clearanceMm,relation
+avionics,cover-1,30,near-heat
+avionics,PMMA,30,near-heat`,
   },
   {
     id: 'emu-softgoods',
@@ -62,14 +66,17 @@ export const DEMO_SCENARIOS: DemoScenario[] = [
       'Unknown foam is captured for the materials-library feedback JSON',
     ],
     parts: [
-      { material: 'ABS', nearbyFuel: 'methanol', maxExpectedTempC: 120, zone: 'cabin' },
+      { id: 'dash-abs', material: 'ABS', nearbyFuel: 'methanol', zone: 'cabin', heaterId: 'cabin-heater' },
       { material: 'Polyethylene', maxExpectedTempC: 70, zone: 'cabin' },
       { material: 'Polycarbonate', maxExpectedTempC: 55, zone: 'cabin' },
       { material: 'Nomex', zone: 'cabin' },
-      { material: 'Stainless steel', zone: 'cabin' },
+      { id: 'heater', material: 'Stainless steel', zone: 'cabin', heaterId: 'cabin-heater' },
       { material: 'Kapton', maxExpectedTempC: 90, zone: 'cabin' },
       { material: 'aerogel-blanket-x', zone: 'cabin' },
     ],
+    adjacencyCsv: `partA,partB,clearanceMm,relation
+heater,dash-abs,15,near-heat
+heater,Polyethylene,40,above`,
   },
   {
     id: 'propellant-bay',

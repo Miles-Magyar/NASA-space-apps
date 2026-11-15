@@ -1,5 +1,9 @@
 import type { SourceLink } from './mission-types';
 
+/** Bump when library rows or schema fields change in a material way. */
+export const MATERIALS_LIBRARY_VERSION = '2026.11.14-cad-1';
+export const MATERIALS_LIBRARY_UPDATED_AT = '2026-11-14';
+
 export interface TempBand {
   value?: number;
   min?: number;

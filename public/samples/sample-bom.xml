@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<bom>
+  <part id="cover-1" material="PMMA" zone="cabin" heaterId="avionics-bay" nearbyFuel="n-heptane" />
+  <part id="cloth-1" material="Nomex" zone="cabin" maxExpectedTempC="40" />
+  <Part>
+    <id>metal-1</id>
+    <Material>Stainless steel</Material>
+    <zone>cabin</zone>
+  </Part>
+</bom>

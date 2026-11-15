@@ -1,0 +1,6 @@
+id,material,nearbyFuel,maxExpectedTempC,zone,heaterId
+cover-1,PMMA,n-heptane,,cabin,avionics-bay
+gasket-1,Nomex,,40,cabin,
+panel-1,Aluminum,,80,cabin,avionics-bay
+pcb-1,Epoxy,,,cabin,power-electronics
+unknown-1,mystery-foam,,50,cabin,

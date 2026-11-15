@@ -165,10 +165,10 @@ export function renderCadVulnerabilityPlan(host: HTMLElement): void {
         <article class="record-card">
           <h3>Near-term build order</h3>
           <ul>
-            <li>Done: library temps + BOM checker + unknown export</li>
-            <li>Next: zone presets auto-fill expected temps from heater catalog</li>
-            <li>Next: adjacency CSV (<code>partA,partB,clearanceMm</code>)</li>
-            <li>Later: glTF material-name import; CAD plugin remains out of scope</li>
+            <li>Done: library temps + multi-format BOM checker + unknown export</li>
+            <li>Done: heater catalog presets + adjacency CSV/JSON flags</li>
+            <li>Done: JSON/CSV/TSV/NDJSON/XML/glTF/STEP intake + cited report export</li>
+            <li>Later: richer glTF/STEP geometry clearance; CAD plugin remains out of scope</li>
           </ul>
         </article>
       </div>

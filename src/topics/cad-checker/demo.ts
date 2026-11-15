@@ -1,7 +1,8 @@
 import { SCENARIOS, scenarioById } from '../mission-scenarios';
 import type { ScenarioId } from '../mission-types';
-import { mountCadChecker } from '../cabin-fire-safety/cad-checker';
+import { mountCadChecker } from './mount';
 import { DEMO_SCENARIOS, sampleBomJson } from './samples';
+import { ACCEPTED_BUILD_EXTENSIONS } from './parse-bom';
 
 export interface CadDemoState {
   destroy: () => void;
@@ -11,6 +12,7 @@ export interface CadDemoState {
 export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
   let scenarioId: ScenarioId = 'lunar';
   const atmospheres = SCENARIOS.filter((s) => !s.fuelsOnly);
+  const formats = ACCEPTED_BUILD_EXTENSIONS.join(' ');
 
   container.innerHTML = `
     <article class="cad-demo-root">
@@ -18,16 +20,22 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
         <p class="eyebrow">Application demo</p>
         <h1>CAD / BOM Flammability Checker</h1>
         <p class="lede">
-          Paste or load a materials-tagged bill of materials, pick a mission atmosphere, and get
+          Paste or load materials-tagged build files, pick a mission atmosphere, and get
           pass / review / high-concern / unknown flags grounded in the curated NASA materials library —
-          LOI vs habitat O₂, softening/melt bands, oxygen-compatibility, and nearby-fuel flash/AIT.
+          LOI vs habitat O₂, softening/melt bands, oxygen-compatibility, nearby-fuel flash/AIT, and adjacency.
         </p>
         <p class="cad-demo-links">
           <a href="#viable-materials">Materials temperature table</a>
           ·
           <a href="#cabin-fire-safety">Cabin fire evidence</a>
           ·
-          <a href="/sample-bom-lunar-habitat.json" download>Download sample BOM JSON</a>
+          <a href="/sample-bom-lunar-habitat.json" download>Sample JSON</a>
+          ·
+          <a href="/samples/sample-bom.csv" download>Sample CSV</a>
+          ·
+          <a href="/samples/sample-bom.tsv" download>Sample TSV</a>
+          ·
+          <a href="/samples/sample-bom.xml" download>Sample XML</a>
           ·
           <span class="muted">Plan: <code>docs/CAD_FIRE_VULNERABILITY_PLAN.md</code></span>
         </p>
@@ -36,15 +44,15 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
       <section class="cad-demo-howto">
         <h2>How the demo works</h2>
         <ol>
-          <li>Pick a <strong>guided scenario</strong> below (or upload your own CSV/JSON).</li>
+          <li>Pick a <strong>guided scenario</strong> below (or upload your own build file).</li>
           <li>Confirm the <strong>mission atmosphere</strong> — lunar and EMU change the flags.</li>
-          <li>Press <strong>Check against atmosphere</strong> (scenarios auto-run).</li>
-          <li>Read the results table, then <strong>copy/download unknowns</strong> for the next library pass.</li>
+          <li>Optionally add an <strong>adjacency</strong> CSV and/or a <strong>heater preset</strong>.</li>
+          <li>Press <strong>Check against atmosphere</strong> (scenarios auto-run), then export the cited report.</li>
         </ol>
         <p class="schema-note">
-          Schema: <code>material</code>, optional <code>mass</code>, <code>area</code>,
-          <code>nearbyFuel</code>, <code>maxExpectedTempC</code>,
-          <code>zone</code> (<code>cabin</code> | <code>eva-suit</code> | <code>propellant-bay</code>).
+          Accepted build types: <code>${formats}</code> (plus NDJSON/JSONL). Binary <code>.glb</code> is not supported — use <code>.gltf</code> or a BOM export.
+          Schema fields: <code>id</code>, <code>material</code>, <code>mass</code>, <code>area</code>,
+          <code>nearbyFuel</code>, <code>maxExpectedTempC</code>, <code>zone</code>, <code>heaterId</code>.
         </p>
       </section>
 
@@ -99,8 +107,9 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
     () => scenarioById(scenarioId)!,
     {
       title: 'Live checker',
-      lead: 'Edit the BOM JSON, upload a file, or use a guided demo above. Flags cite the materials library — SI notes stay corpus-grounded.',
+      lead: 'Edit the BOM, upload JSON/CSV/TSV/XML/glTF/STEP, or use a guided demo. Optional adjacency + heater presets. Flags cite the materials library.',
       initialBom: sampleBomJson(first.parts),
+      initialAdjacency: first.adjacencyCsv ?? '',
       hideDefaultSample: true,
       autoRun: true,
       topicId: 'cad-checker',
@@ -114,6 +123,7 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
     select.value = scenarioId;
     syncNotes();
     handle.setBom(sampleBomJson(demo.parts));
+    handle.setAdjacency(demo.adjacencyCsv ?? '');
     notice.innerHTML = `
       <p class="cad-demo-loaded"><strong>Loaded:</strong> ${demo.title}</p>
       <ul>${demo.whatToNotice.map((n) => `<li>${n}</li>`).join('')}</ul>
@@ -139,7 +149,6 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
     void handle.run();
   });
 
-  // Highlight first demo card without re-running (autoRun already fired).
   container.querySelector(`.cad-demo-card[data-demo="${first.id}"]`)?.classList.add('is-active');
   notice.innerHTML = `
     <p class="cad-demo-loaded"><strong>Loaded:</strong> ${first.title}</p>
