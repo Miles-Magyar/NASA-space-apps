@@ -2,6 +2,16 @@ import { requestHelpbot } from './si-client';
 import { HELPBOT_HISTORY_LIMIT, HELPBOT_MESSAGE_LIMIT, type HelpbotSource, type HelpbotTurn } from './helpbot-contract';
 import { TOPICS } from './topics';
 
+const WELCOME_MESSAGE =
+  'Welcome to Flame in Freefall. Ask where to find fire-safety information — for example “Saffire flame spread”, “Nomex oxygen limit”, or “EMU atmosphere”. Answers cite the curated NASA corpus.';
+const WELCOME_PREVIEW_MS = 5000;
+
+export interface HelpbotHandle {
+  showWelcomePreview: () => void;
+  hideWelcomePreview: () => void;
+  destroy: () => void;
+}
+
 interface ChatMessage extends HelpbotTurn {
   localHtml?: boolean;
   sources?: HelpbotSource[];
@@ -31,12 +41,13 @@ function appendAssistantText(bubble: HTMLElement, text: string): void {
   bubble.append(text.slice(cursor));
 }
 
-export function mountHelpbot(root: HTMLElement): { destroy: () => void } {
+export function mountHelpbot(root: HTMLElement): HelpbotHandle {
   const messages: ChatMessage[] = [];
   root.innerHTML = `
     <button type="button" class="helpbot-launcher" aria-label="Open helpbot" aria-expanded="false" aria-controls="helpbot-panel">
       <span class="helpbot-icon" aria-hidden="true"></span>
     </button>
+    <p class="helpbot-welcome-preview" role="status" hidden></p>
     <section id="helpbot-panel" class="helpbot-panel" aria-label="Helpbot" hidden>
       <div class="helpbot-log" role="log" aria-label="Conversation" tabindex="0"></div>
       <form class="helpbot-form">
@@ -49,11 +60,29 @@ export function mountHelpbot(root: HTMLElement): { destroy: () => void } {
 
   const launcher = root.querySelector<HTMLButtonElement>('.helpbot-launcher')!;
   const panel = root.querySelector<HTMLElement>('.helpbot-panel')!;
+  const welcomePreview = root.querySelector<HTMLElement>('.helpbot-welcome-preview')!;
   const log = root.querySelector<HTMLElement>('.helpbot-log')!;
   const form = root.querySelector<HTMLFormElement>('.helpbot-form')!;
   const input = root.querySelector<HTMLInputElement>('#helpbot-input')!;
   const send = form.querySelector<HTMLButtonElement>('button')!;
   let activeRequest: AbortController | null = null;
+  let previewTimer: number | undefined;
+
+  function hideWelcomePreview() {
+    window.clearTimeout(previewTimer);
+    previewTimer = undefined;
+    welcomePreview.hidden = true;
+    welcomePreview.textContent = '';
+  }
+
+  function showWelcomePreview() {
+    if (!panel.hidden) return;
+    hideWelcomePreview();
+    welcomePreview.hidden = false;
+    welcomePreview.textContent = WELCOME_MESSAGE;
+    previewTimer = window.setTimeout(hideWelcomePreview, WELCOME_PREVIEW_MS);
+  }
+
   function renderLog() {
     log.replaceChildren(...messages.map((message) => {
       const bubble = document.createElement('div');
@@ -89,15 +118,12 @@ export function mountHelpbot(root: HTMLElement): { destroy: () => void } {
 
   function welcome() {
     if (messages.length) return;
-    messages.push({
-      role: 'assistant',
-      content:
-        'Welcome to Flame in Freefall. Ask where to find fire-safety information — for example “Saffire flame spread”, “Nomex oxygen limit”, or “EMU atmosphere”. Answers cite the curated NASA corpus.',
-    });
+    messages.push({ role: 'assistant', content: WELCOME_MESSAGE });
     renderLog();
   }
 
   function open() {
+    hideWelcomePreview();
     panel.hidden = false;
     launcher.setAttribute('aria-expanded', 'true');
     launcher.setAttribute('aria-label', 'Close helpbot');
@@ -149,7 +175,10 @@ export function mountHelpbot(root: HTMLElement): { destroy: () => void } {
   form.addEventListener('submit', onSubmit);
 
   return {
+    showWelcomePreview,
+    hideWelcomePreview,
     destroy: () => {
+      hideWelcomePreview();
       activeRequest?.abort();
       launcher.removeEventListener('click', onLaunch);
       root.removeEventListener('keydown', onKeydown);

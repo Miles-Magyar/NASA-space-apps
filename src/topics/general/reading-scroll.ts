@@ -6,7 +6,11 @@ export interface ReadingScrollHandles {
   jumpTo: (index: number) => void;
 }
 
-export function initReadingScroll(root: HTMLElement, closeSidebar: () => void): ReadingScrollHandles {
+export function initReadingScroll(
+  root: HTMLElement,
+  closeSidebar: () => void,
+  onTitleCrossing: (pastTitle: boolean) => void,
+): ReadingScrollHandles {
   const intro = root.querySelector<HTMLElement>('.general-intro');
   const sections = Array.from(root.querySelectorAll<HTMLElement>('.reading-section'));
   const rail = root.querySelector<HTMLElement>('.scroll-rail');
@@ -19,6 +23,7 @@ export function initReadingScroll(root: HTMLElement, closeSidebar: () => void): 
   let destroyFns: Array<() => void> = [];
 
   function setActive(i: number) {
+    const wasPastTitle = active > 0;
     active = Math.max(0, Math.min(stops.length - 1, i));
     rail?.querySelectorAll('button').forEach((btn, idx) => {
       btn.classList.toggle('is-active', idx === active);
@@ -29,6 +34,7 @@ export function initReadingScroll(root: HTMLElement, closeSidebar: () => void): 
     chrome?.classList.toggle('is-visible', active > 0);
     sun?.classList.toggle('is-visible', active > 0);
     root.classList.toggle('past-intro', pastIntro);
+    if (wasPastTitle !== (active > 0)) onTitleCrossing(active > 0);
   }
 
   function jumpTo(index: number) {
