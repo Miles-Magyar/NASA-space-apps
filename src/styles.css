@@ -348,15 +348,6 @@ img {
   opacity: calc(1 - var(--intro-progress) * 1.2);
 }
 
-.hero-context {
-  margin: 0.35rem 0 0;
-  max-width: 34rem;
-  font-size: clamp(0.95rem, 1.6vw, 1.05rem);
-  line-height: 1.55;
-  color: var(--cream-faint);
-  opacity: calc(1 - var(--intro-progress) * 1.25);
-}
-
 .scroll-hint {
   margin: 2.5rem 0 0;
   font-size: 0.78rem;

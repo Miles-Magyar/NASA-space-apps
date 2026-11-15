@@ -153,10 +153,6 @@ function renderGeneral(main: HTMLElement) {
         <h1 class="hero-title">Flame in Freefall</h1>
         <img class="match-flame" src="${flameUrl}" width="64" height="64" alt="" />
         <p class="hero-sub">SI-powered fire safety insights from microgravity combustion data</p>
-        <p class="hero-context">
-          On Earth, hot air rises and pulls a flame into a teardrop. In freefall it doesn’t — flames become quiet spheres, smoke may not rush to the ceiling, and ordinary materials can burn differently when the air is richer in oxygen.
-          This site turns NASA’s orbit experiments into plain guidance for cabin fire safety, spacesuits, and the materials we fly with.
-        </p>
         <p class="scroll-hint" aria-hidden="true">Scroll</p>
       </section>
       <div class="sun-panel" aria-hidden="true">

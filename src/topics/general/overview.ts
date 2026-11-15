@@ -14,7 +14,8 @@ export const OVERVIEW_SECTIONS: OverviewSection[] = [
     heading: 'What this project is for',
     shortTitle: 'Purpose',
     paragraphs: [],
-    html: `<p class="purpose-lede">Flame in Freefall turns NASA microgravity combustion evidence into atmosphere-aware fire-safety guidance for habitats, suits, vehicles, and build materials — with citations you can open, not a black-box risk score.</p>
+    html: `<p class="purpose-lede">On Earth, hot air rises and pulls a flame into a teardrop. In freefall it doesn’t — flames become quiet spheres, smoke may not rush to the ceiling, and ordinary materials can burn differently when the air is richer in oxygen.</p>
+<p class="purpose-lede">Flame in Freefall turns NASA’s orbit experiments into plain, atmosphere-aware fire-safety guidance for habitats, suits, vehicles, and build materials — with citations you can open, not a black-box risk score.</p>
 <p><strong>How to use it</strong></p>
 <ol class="purpose-steps">
   <li>Open <strong>Study Topics</strong> (menu, top left) to browse investigations and mission themes.</li>
