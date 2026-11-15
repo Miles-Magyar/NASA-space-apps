@@ -12,8 +12,8 @@ import {
   CAD_CONVERT_MAX_BYTES,
   convertLocally,
   type ConvertResult,
-} from './lib/cad-convert-core';
-import { checkRateLimit } from './lib/rate-limit';
+} from './lib/cad-convert-core.js';
+import { checkRateLimit } from './lib/rate-limit.js';
 
 type Res = {
   status: (code: number) => { json: (body: unknown) => void };

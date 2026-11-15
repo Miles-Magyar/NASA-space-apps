@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import handler from './helpbot';
-import summarize from './summarize';
+import handler from './helpbot.js';
+import summarize from './summarize.js';
 
 const geminiReply = { candidates: [{ content: { parts: [{ text: 'See [1].' }] } }] };
 

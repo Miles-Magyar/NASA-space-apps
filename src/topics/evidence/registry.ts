@@ -1,4 +1,4 @@
-import type { StudyCard } from '../mission-types';
+import type { StudyCard } from '../mission-types.js';
 
 /** Shared investigation cards reused across topics and Cabin Fire Safety. */
 export const INVESTIGATIONS: Record<string, StudyCard> = {

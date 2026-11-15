@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import { checkRateLimit, resetRateLimitBuckets } from './rate-limit';
+import { checkRateLimit, resetRateLimitBuckets } from './rate-limit.js';
 
 describe('rate-limit', () => {
   beforeEach(() => resetRateLimitBuckets());

@@ -2,11 +2,11 @@ import {
   HELPBOT_HISTORY_LIMIT,
   HELPBOT_MESSAGE_LIMIT,
   type HelpbotTurn,
-} from '../src/helpbot-contract';
-import { findHelpbotEvidence } from './lib/helpbot-evidence';
-import { reserveHelpbotQuota } from './lib/helpbot-quota';
-import { HELPBOT_SYSTEM_PROMPT } from './lib/helpbot-prompt';
-import { SCENARIOS } from '../src/topics/mission-scenarios';
+} from '../src/helpbot-contract.js';
+import { findHelpbotEvidence } from './lib/helpbot-evidence.js';
+import { reserveHelpbotQuota } from './lib/helpbot-quota.js';
+import { HELPBOT_SYSTEM_PROMPT } from './lib/helpbot-prompt.js';
+import { SCENARIOS } from '../src/topics/mission-scenarios.js';
 
 const MODEL = 'gemini-3.5-flash-lite';
 const MAX_BODY_BYTES = 24_000;
@@ -73,10 +73,12 @@ export default async function handler(req: HelpbotRequest, res: ApiResponse) {
 
   const key = process.env.GEMINI_API_KEY;
   if (!key) {
+    console.warn('[helpbot] Missing Gemini configuration');
     res.status(503).json({ error: UNAVAILABLE });
     return;
   }
 
+  let stage = 'quota';
   try {
     const retryAfter = await reserveHelpbotQuota(process.env.VERCEL ? req.headers?.['x-vercel-forwarded-for'] : undefined);
     if (retryAfter) {
@@ -85,6 +87,7 @@ export default async function handler(req: HelpbotRequest, res: ApiResponse) {
       return;
     }
 
+    stage = 'Gemini';
     const sources: Array<{ url: string; label: string }> = [];
     const contextRecords = records.map(({ title, evidence, context, sources: links }) => ({
       title, evidence, context,
@@ -112,7 +115,11 @@ export default async function handler(req: HelpbotRequest, res: ApiResponse) {
         generationConfig: { maxOutputTokens: 400, thinkingConfig: { thinkingLevel: 'MINIMAL' } },
       }),
     });
-    if (!upstream.ok) throw new Error('Gemini request failed');
+    if (!upstream.ok) {
+      console.warn('[helpbot] Gemini returned HTTP %d', upstream.status);
+      res.status(503).json({ error: UNAVAILABLE });
+      return;
+    }
     const data = await upstream.json() as {
       candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }>;
     };
@@ -123,6 +130,7 @@ export default async function handler(req: HelpbotRequest, res: ApiResponse) {
     const references = new Set([...reply.matchAll(/\[(\d+)\]/g)].map((match) => Number(match[1])));
     res.status(200).json({ reply, sources: sources.filter((_, i) => references.has(i + 1)) });
   } catch {
+    console.warn('[helpbot] %s request failed', stage);
     res.status(503).json({ error: UNAVAILABLE });
   }
 }

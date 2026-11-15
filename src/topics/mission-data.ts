@@ -1,6 +1,6 @@
-import type { MissionDataset } from './mission-types';
-import { fuelsMission } from './fuels/mission';
-import { studiesByIds } from './evidence/registry';
+import type { MissionDataset } from './mission-types.js';
+import { fuelsMission } from './fuels/mission.js';
+import { studiesByIds } from './evidence/registry.js';
 
 const viableMaterials: MissionDataset = {
   topicId: 'viable-materials',
