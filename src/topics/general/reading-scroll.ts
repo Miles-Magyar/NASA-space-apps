@@ -62,7 +62,7 @@ export function initReadingScroll(root: HTMLElement): ReadingScrollHandles {
   function onWheel(e: WheelEvent) {
     if (prefersReducedMotion() || settling) return;
     const target = e.target as HTMLElement | null;
-    if (target?.closest('.helpbot, .sidebar, .search-results, .cad-checker, .scroll-rail')) return;
+    if (target?.closest('.helpbot, .sidebar, .search-results, .cad-checker')) return;
     const current = stops[active];
     if (!current) return;
     // Allow inner scroll when section content exceeds viewport

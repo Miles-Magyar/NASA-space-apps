@@ -163,21 +163,9 @@ function renderGeneral(main: HTMLElement) {
         <img src="${starUrl}" alt="" />
       </div>
       <nav class="scroll-rail" aria-label="Reading stops">
-        <p class="scroll-rail-title">Stops</p>
-        <button type="button" data-stop="0" aria-label="Title">
-          <span class="rail-dot" aria-hidden="true"></span>
-          <span class="rail-label">Title</span>
-        </button>
-        ${OVERVIEW_SECTIONS.map(
-          (s, i) => `<button type="button" data-stop="${i + 1}" aria-label="${s.heading}">
-            <span class="rail-dot" aria-hidden="true"></span>
-            <span class="rail-label">${s.shortTitle ?? s.heading}</span>
-          </button>`,
-        ).join('')}
-        <button type="button" data-stop="${OVERVIEW_SECTIONS.length + 1}" aria-label="${SOFIE_FEATURE.title}">
-          <span class="rail-dot" aria-hidden="true"></span>
-          <span class="rail-label">SoFIE</span>
-        </button>
+        <button type="button" aria-label="Title"></button>
+        ${OVERVIEW_SECTIONS.map((s) => `<button type="button" aria-label="${s.heading}"></button>`).join('')}
+        <button type="button" aria-label="${SOFIE_FEATURE.title}"></button>
       </nav>
       ${OVERVIEW_SECTIONS.map(
         (s) => `<section class="reading-section" id="${s.id}">
