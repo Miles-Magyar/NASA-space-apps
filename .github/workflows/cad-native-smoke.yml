@@ -1,0 +1,46 @@
+name: CAD native smoke
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/cad-convert-upstream/**'
+      - 'api/cad-convert.ts'
+      - 'api/lib/cad-convert-core*'
+      - 'src/topics/cad-checker/**'
+      - '.github/workflows/cad-native-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-dwg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Build and test the native DWG worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --tag flame-cad-worker tools/cad-convert-upstream
+          export CAD_CONVERT_UPSTREAM_TOKEN="$(openssl rand -hex 24)"
+          worker="$(docker run --detach --read-only --tmpfs /tmp:rw,nodev,nosuid,size=64m,mode=1777 \
+            --cap-drop=ALL --env CAD_CONVERT_UPSTREAM_TOKEN --publish 127.0.0.1::8787 flame-cad-worker)"
+          trap 'docker logs "$worker"; docker rm --force "$worker" >/dev/null' EXIT
+          worker_address="$(docker port "$worker" 8787/tcp)"
+          curl --fail --silent --show-error --retry 15 --retry-all-errors --retry-delay 1 \
+            --max-time 3 "http://$worker_address/health"
+          export CAD_CONVERT_UPSTREAM="http://$worker_address/convert"
+          export CAD_SMOKE_DWG="$RUNNER_TEMP/example_2000.dwg"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://raw.githubusercontent.com/LibreDWG/libredwg/0.14/test/test-data/example_2000.dwg \
+            --output "$CAD_SMOKE_DWG"
+          echo "34574244d7556d1ef7b437443d9b3d1ad8662e1c669c42d80cff6a8a19799be9  $CAD_SMOKE_DWG" | sha256sum -c -
+          npm test -- src/topics/cad-checker/__tests__/native-dwg.test.ts

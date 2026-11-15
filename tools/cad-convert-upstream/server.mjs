@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const host = process.env.CAD_CONVERT_UPSTREAM_HOST || '127.0.0.1';
-const port = Number(process.env.CAD_CONVERT_UPSTREAM_PORT || 8787);
+const port = Number(process.env.CAD_CONVERT_UPSTREAM_PORT || process.env.PORT || 8787);
 const token = process.env.CAD_CONVERT_UPSTREAM_TOKEN;
 const converter = process.env.CAD_CONVERT_BIN?.trim();
 const fixtureMarker = Buffer.from('AC1032\0FLAME_DXF_V1\n');
