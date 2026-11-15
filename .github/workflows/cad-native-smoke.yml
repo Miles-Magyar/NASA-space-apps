@@ -35,7 +35,7 @@ jobs:
             --cap-drop=ALL --env CAD_CONVERT_UPSTREAM_TOKEN --publish 127.0.0.1::8787 flame-cad-worker)"
           trap 'docker logs "$worker"; docker rm --force "$worker" >/dev/null' EXIT
           worker_address="$(docker port "$worker" 8787/tcp)"
-          curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 \
+          curl --fail --silent --show-error --retry 15 --retry-all-errors --retry-delay 1 \
             --max-time 3 "http://$worker_address/health"
           export CAD_CONVERT_UPSTREAM="http://$worker_address/convert"
           export CAD_SMOKE_DWG="$RUNNER_TEMP/example_2000.dwg"
