@@ -59,7 +59,7 @@ export function searchCorpus(query: string, limit = 12): SearchHit[] {
         score: s,
         title: section.heading,
         snippet: 'General overview section',
-        href: `#general`,
+        href: `#general?stop=${encodeURIComponent(section.id)}`,
         kind: 'Overview',
       });
     }
@@ -84,7 +84,7 @@ export function searchCorpus(query: string, limit = 12): SearchHit[] {
         score: s + 8 + (exactName ? 20 : 0),
         title: inv.investigation,
         snippet: inv.keyFinding,
-        href: `#investigations`,
+        href: `#investigations?study=${encodeURIComponent(inv.id)}`,
         kind: 'Investigation',
       });
     }
@@ -101,20 +101,21 @@ export function searchCorpus(query: string, limit = 12): SearchHit[] {
           score: s + 4,
           title: row.name,
           snippet: row.summary,
-          href: `#${topicId}`,
-          kind: 'Evidence row',
+          href: `#${topicId}?record=${encodeURIComponent(row.id)}`,
+          kind: `Evidence · ${mission.title}`,
         });
       }
     }
     for (const study of mission.studies) {
+      if (INVESTIGATIONS[study.id]) continue;
       const s = scoreText(study.title, toks) * 2 + scoreText(study.keyFinding, toks);
       if (s > 0) {
         hits.push({
           score: s + 3,
           title: study.title,
           snippet: study.keyFinding,
-          href: `#${topicId}`,
-          kind: 'Study',
+          href: `#${topicId}?study=${encodeURIComponent(study.id)}`,
+          kind: `Study · ${mission.title}`,
         });
       }
     }

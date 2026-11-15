@@ -97,5 +97,6 @@ export interface MissionDataset {
   studies: StudyCard[];
   records: EvidenceRecord[];
   showEarthScenario?: boolean;
+  defaultScenario?: ScenarioId;
   sharpPanels?: boolean;
 }

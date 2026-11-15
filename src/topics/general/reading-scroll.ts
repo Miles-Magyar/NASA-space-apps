@@ -6,7 +6,7 @@ export interface ReadingScrollHandles {
   jumpTo: (index: number) => void;
 }
 
-export function initReadingScroll(root: HTMLElement): ReadingScrollHandles {
+export function initReadingScroll(root: HTMLElement, closeSidebar: () => void): ReadingScrollHandles {
   const intro = root.querySelector<HTMLElement>('.general-intro');
   const sections = Array.from(root.querySelectorAll<HTMLElement>('.reading-section'));
   const rail = root.querySelector<HTMLElement>('.scroll-rail');
@@ -25,7 +25,8 @@ export function initReadingScroll(root: HTMLElement): ReadingScrollHandles {
       btn.setAttribute('aria-current', idx === active ? 'true' : 'false');
     });
     const pastIntro = active > 0 || (intro ? intro.getBoundingClientRect().top < -40 : true);
-    chrome?.classList.toggle('is-visible', pastIntro);
+    if (active === 0 && chrome?.classList.contains('is-visible')) closeSidebar();
+    chrome?.classList.toggle('is-visible', active > 0);
     sun?.classList.toggle('is-visible', pastIntro);
     root.classList.toggle('past-intro', pastIntro);
   }
@@ -34,8 +35,8 @@ export function initReadingScroll(root: HTMLElement): ReadingScrollHandles {
     const el = stops[index];
     if (!el) return;
     settling = true;
-    el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
     setActive(index);
+    el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
     window.setTimeout(() => {
       settling = false;
     }, prefersReducedMotion() ? 50 : 450);

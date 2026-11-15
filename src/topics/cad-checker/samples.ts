@@ -22,7 +22,7 @@ export const DEMO_SCENARIOS: DemoScenario[] = [
     id: 'lunar-acrylic',
     title: 'Lunar habitat acrylic cover',
     blurb:
-      'A clear PMMA cover over avionics in a 34% O₂ lunar cabin — classic BASS/SoFIE solid surrogate next to a warm electronics bay.',
+      'Screen an acrylic cover above warm electronics in a lunar cabin.',
     atmosphereId: 'lunar',
     whatToNotice: [
       'PMMA LOI band sits below lunar 34% O₂ → high-concern',
@@ -44,7 +44,7 @@ avionics,PMMA,30,near-heat`,
     id: 'emu-softgoods',
     title: 'EMU soft-goods mix',
     blurb:
-      'Pure-oxygen EVA reference (100% O₂ / 4.3 psi). Compare PTFE (prefer) vs Buna-N (high-concern) and Nomex under suit rules.',
+      'Compare seals and fabrics in a spacesuit’s pure-oxygen atmosphere.',
     atmosphereId: 'emu',
     whatToNotice: [
       'PTFE stays prefer-class but still needs impact qualification notes',
@@ -64,7 +64,7 @@ avionics,PMMA,30,near-heat`,
     id: 'rover-cabin',
     title: 'Pressurized rover cabin BOM',
     blurb:
-      'Mixed plastics and metals for a pressurized rover under an illustrative Mars habitat mix — includes ABS near a heater and an unknown foam.',
+      'Check a heated dashboard and an unlisted insulation material in a rover cabin.',
     atmosphereId: 'mars',
     whatToNotice: [
       'ABS / polyethylene trip high-concern on LOI vs elevated O₂',
@@ -88,7 +88,7 @@ heater,Polyethylene,40,above`,
     id: 'propellant-bay',
     title: 'Propellant-bay adjacency',
     blurb:
-      'Structural metals and soft goods tagged propellant-bay — cabin LOI ranking is caveated; fuel flash/AIT still screen against local temperature.',
+      'Screen structural materials near hydrogen and methane.',
     atmosphereId: 'iss',
     whatToNotice: [
       'Zone flag pushes review even when metals would otherwise pass',
@@ -110,7 +110,7 @@ export const NATIVE_CAD_DEMO_SCENARIOS: DemoScenario[] = [
     id: 'dxf-habitat-cover',
     title: 'DXF acrylic panel (native CAD)',
     blurb:
-      'ASCII AutoCAD DXF with MATERIAL_PMMA / Aluminum / Nomex layers — extracted in-page with no download.',
+      'Extract an acrylic panel, aluminum, and Nomex from drawing layers.',
     atmosphereId: 'lunar',
     whatToNotice: [
       'DXF layers become BomPart rows automatically',
@@ -125,9 +125,9 @@ Aluminum,PMMA,30,near-heat`,
   },
   {
     id: 'step-sw-habitat-assy',
-    title: 'STEP assembly (SolidWorks→STEP hub)',
+    title: 'STEP habitat assembly',
     blurb:
-      'Phase 2 interchange: PRODUCT + NEXT_ASSEMBLY_USAGE_OCCURRENCE tree → parts with parentId and inferred near-heat adjacency. No download.',
+      'See how assembly relationships flag acrylic near a heater.',
     atmosphereId: 'lunar',
     whatToNotice: [
       'STEP PRODUCT nodes become BomPart rows with stable ids',
@@ -142,7 +142,7 @@ Aluminum,PMMA,30,near-heat`,
     id: 'gltf-habitat-panel',
     title: 'glTF panel mesh preview',
     blurb:
-      'Habitat cover as glTF meshes (PMMA / Aluminum / Nomex) — 3D preview in-page plus materials → checkBom. No download.',
+      'Preview a habitat cover in 3D and check its named materials.',
     atmosphereId: 'lunar',
     whatToNotice: [
       'Mesh preview renders the uploaded glTF geometry',

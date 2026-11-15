@@ -30,14 +30,14 @@ function renderShell() {
   app.innerHTML = `
     <div class="app-shell">
       <header class="app-chrome">
-        <button type="button" class="menu-btn" aria-expanded="false" aria-controls="topic-sidebar">
+        <button type="button" class="menu-btn" aria-label="Study Topics" aria-expanded="false" aria-controls="topic-sidebar">
           <span class="menu-icon" aria-hidden="true"></span>
           <span class="menu-label">Study Topics</span>
         </button>
         <div class="search-wrap">
           <label class="sr-only" for="masthead-search">Search evidence</label>
-          <input id="masthead-search" type="search" placeholder="Search Saffire, Nomex, EMU…" autocomplete="off" />
-          <div class="search-results" hidden role="listbox"></div>
+          <input id="masthead-search" type="search" placeholder="Search Saffire, Nomex, EMU…" autocomplete="off" aria-controls="search-results" />
+          <nav id="search-results" class="search-results" aria-label="Search results" hidden></nav>
         </div>
       </header>
 
@@ -75,19 +75,19 @@ function renderShell() {
   const sidebar = app.querySelector<HTMLElement>('.sidebar')!;
   const searchInput = app.querySelector<HTMLInputElement>('#masthead-search')!;
   const searchResults = app.querySelector<HTMLElement>('.search-results')!;
+  const searchWrap = searchInput.closest<HTMLElement>('.search-wrap')!;
 
-  const closeSidebar = () => {
+  const closeSidebar = (restoreFocus = false) => {
     sidebar.hidden = true;
     app.querySelector('.app-shell')?.classList.remove('sidebar-open');
     menuButton?.setAttribute('aria-expanded', 'false');
-    menuButton?.focus();
+    if (restoreFocus) menuButton?.focus({ preventScroll: true });
   };
 
   const openSidebar = () => {
     sidebar.hidden = false;
     app.querySelector('.app-shell')?.classList.add('sidebar-open');
     menuButton?.setAttribute('aria-expanded', 'true');
-    sidebar.querySelector('a')?.focus();
   };
 
   menuButton?.addEventListener('click', () => {
@@ -97,13 +97,13 @@ function renderShell() {
 
   sidebar.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).closest('a[data-topic]');
-    if (a) closeSidebar();
+    if (a) closeSidebar(true);
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !sidebar.hidden) {
+    if (e.key === 'Escape' && !e.defaultPrevented && !sidebar.hidden) {
       e.preventDefault();
-      closeSidebar();
+      closeSidebar(true);
     }
   });
 
@@ -117,35 +117,72 @@ function renderShell() {
     const hits = searchCorpus(q);
     searchResults.hidden = false;
     if (!hits.length) {
-      searchResults.innerHTML = `<p class="search-empty">No matches in the curated corpus.</p>`;
+      searchResults.innerHTML = `<p class="search-empty" role="status">No results. Try a material, study, or topic name.</p>`;
       return;
     }
     searchResults.innerHTML = hits
       .map(
         (h) =>
-          `<a class="search-hit" role="option" href="${h.href}"><span class="search-kind">${h.kind}</span><strong>${h.title}</strong><span>${h.snippet}</span></a>`,
+          `<a class="search-hit" href="${h.href}"><span class="search-kind">${h.kind}</span><strong>${h.title}</strong><span>${h.snippet}</span></a>`,
       )
       .join('');
   };
 
   searchInput.addEventListener('input', runSearch);
   searchInput.addEventListener('focus', runSearch);
-  searchResults.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('a')) {
+  searchWrap.addEventListener('focusout', (e) => {
+    if (e.relatedTarget instanceof Node && !searchWrap.contains(e.relatedTarget)) searchResults.hidden = true;
+  });
+  searchWrap.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !searchResults.hidden) {
+      e.preventDefault();
+      searchInput.focus();
       searchResults.hidden = true;
+      return;
+    }
+    if (searchResults.hidden) {
+      if (e.key !== 'ArrowDown') return;
+      runSearch();
+    }
+    const links = Array.from(searchResults.querySelectorAll<HTMLAnchorElement>('.search-hit'));
+    if (e.key === 'Enter' && e.target === searchInput && links.length) {
+      e.preventDefault();
+      links[0].click();
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (!links.length) return;
+      e.preventDefault();
+      const index = links.findIndex((link) => link === document.activeElement);
+      if (e.key === 'ArrowDown') links[Math.min(index + 1, links.length - 1)].focus();
+      else if (index > 0) links[index - 1].focus();
+      else searchInput.focus();
     }
   });
+  searchResults.addEventListener('click', (e) => {
+    const link = (e.target as HTMLElement).closest('a');
+    if (link) {
+      searchResults.hidden = true;
+      if (link.hash === location.hash) window.dispatchEvent(new HashChangeEvent('hashchange'));
+    }
+  });
+  window.addEventListener('hashchange', () => { searchResults.hidden = true; });
   document.addEventListener('click', (e) => {
-    if (!(e.target as HTMLElement).closest('.search-wrap')) {
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+    if (!sidebar.hidden && !sidebar.contains(target) && !menuButton?.contains(target)) {
+      closeSidebar(sidebar.contains(document.activeElement));
+    }
+    if (!target.closest('.search-wrap')) {
       searchResults.hidden = true;
     }
   });
 
   helpbotHandle?.destroy();
   helpbotHandle = mountHelpbot(app.querySelector('.helpbot')!);
+  return closeSidebar;
 }
 
-function renderGeneral(main: HTMLElement) {
+function renderGeneral(main: HTMLElement, closeSidebar: () => void) {
   main.innerHTML = `
     <div class="general-root">
       <section class="general-intro">
@@ -190,7 +227,7 @@ function renderGeneral(main: HTMLElement) {
   `;
 
   reading?.destroy();
-  reading = initReadingScroll(main.querySelector('.general-root')!);
+  reading = initReadingScroll(main.querySelector('.general-root')!, closeSidebar);
 
   main.querySelectorAll('a[href^="#"]').forEach((a) => {
     a.addEventListener('click', (e) => {
@@ -198,13 +235,14 @@ function renderGeneral(main: HTMLElement) {
       if (href && href.startsWith('#') && href.length > 1) {
         // allow hash routing
         e.preventDefault();
-        location.hash = href;
+        const study = (a as HTMLAnchorElement).dataset.study;
+        location.hash = study ? `${href}?study=${encodeURIComponent(study)}` : href;
       }
     });
   });
 }
 
-function renderTopic(topicId: string) {
+function renderTopic(topicId: string, closeSidebar: () => void) {
   reading?.destroy();
   reading = null;
   missionView?.destroy();
@@ -223,7 +261,7 @@ function renderTopic(topicId: string) {
   if (topicId === 'general') {
     shell.classList.remove('starfield');
     chrome?.classList.remove('is-visible');
-    renderGeneral(main);
+    renderGeneral(main, closeSidebar);
     return;
   }
 
@@ -260,9 +298,29 @@ function renderTopic(topicId: string) {
 }
 
 function boot() {
-  renderShell();
-  renderTopic(currentTopicId());
-  window.addEventListener('hashchange', () => renderTopic(currentTopicId()));
+  const closeSidebar = renderShell();
+  const renderCurrentTopic = () => {
+    const topic = currentTopicId();
+    renderTopic(topic, closeSidebar);
+    const params = new URLSearchParams(location.hash.split('?')[1]);
+    const stop = params.get('stop');
+    if (topic === 'general' && stop) {
+      const index = OVERVIEW_SECTIONS.findIndex((section) => section.id === stop);
+      if (index >= 0) reading?.jumpTo(index + 1);
+      return;
+    }
+    const study = params.get('study');
+    const record = params.get('record');
+    const target = study ? document.getElementById(`study-${study}`)
+      : record ? document.getElementById(`evidence-${record}`) : null;
+    if (target) {
+      target.tabIndex = -1;
+      target.focus({ preventScroll: true });
+      target.scrollIntoView({ block: 'center' });
+    }
+  };
+  renderCurrentTopic();
+  window.addEventListener('hashchange', renderCurrentTopic);
 }
 
 boot();

@@ -229,5 +229,5 @@ export function bestSafetyRegulationFit(
 }
 
 export function rankingDisclaimer(): string {
-  return 'Triage scores highlight concern and citation depth. Sort by evidence strength, atmosphere relevance, or material category without changing the underlying citations. The safety-regulation suggestion prefers cabin/material rows whose LOI/LOC clears the selected atmosphere. None of these are a validated quantitative risk model.';
+  return 'Use the ranking to decide which records to read first. Scores reflect the available citations, relevance to the selected atmosphere, and screening flags. They do not estimate the probability of fire or establish flight qualification.';
 }

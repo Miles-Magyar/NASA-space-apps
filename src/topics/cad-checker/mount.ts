@@ -23,6 +23,7 @@ export interface CadCheckerOptions {
   autoRun?: boolean;
   hideDefaultSample?: boolean;
   topicId?: string;
+  onResults?: (results: CheckResult[], scenario: ScenarioPreset) => void;
 }
 
 export interface CadCheckerHandle {
@@ -44,6 +45,7 @@ export function mountCadChecker(
 ): CadCheckerHandle {
   const unknownSession: UnknownMaterialCapture[] = [];
   let lastResults: CheckResult[] = [];
+  let runId = 0;
   let lastFormat = 'json';
   let lastEdges: AdjacencyEdge[] = [];
   let lastFileName: string | undefined;
@@ -64,8 +66,7 @@ export function mountCadChecker(
       <p>${lead}</p>
       <p class="cad-disclaimer" role="note">
         Triage aid only — not NASA-STD-6001 certification or oxygen-system flight qualification.
-        Library <code>${MATERIALS_LIBRARY_VERSION}</code> bands are method-/grade-dependent; open citations before design decisions.
-        SI interprets flagged rows and must not invent uncited LOI/temps.
+        Results depend on the material grade and test method. Open the sources next to each flag for the original conditions.
       </p>
       <ol class="cad-flow" aria-label="Checker workflow">
         <li>Upload or paste a build / CAD file</li>
@@ -261,26 +262,16 @@ avionics-bay,PMMA,30,near-heat`;
         glbBuffer: meta?.glbBuffer ?? lastGlbBuffer,
         fileName: meta?.fileName,
       }).then((handle) => {
-        meshPreview = handle;
+        if (host.contains(meshHost)) meshPreview = handle;
+        else handle.destroy();
       });
     }
   };
 
   const resolveImport = (): CadImportResult => {
     const lower = lastFileName?.toLowerCase() ?? '';
-    if (
-      lastCadImport &&
-      lastFileName &&
-      (isNativeCadFileName(lastFileName) ||
-        lower.endsWith('.step') ||
-        lower.endsWith('.stp') ||
-        lower.endsWith('.glb') ||
-        lastCadImport.nativeCad) &&
-      !lower.endsWith('.dxf')
-    ) {
-      return lastCadImport;
-    }
-    if (/^\s*0\s*\nSECTION/im.test(input.value) || lower.endsWith('.dxf')) {
+    if (lastCadImport) return lastCadImport;
+    if (/^\s*0\s*\r?\nSECTION/im.test(input.value) || lower.endsWith('.dxf')) {
       return importCadText(input.value, lastFileName ?? 'paste.dxf');
     }
     if (/^\s*ISO-10303/im.test(input.value) || lower.endsWith('.step') || lower.endsWith('.stp')) {
@@ -297,11 +288,16 @@ avionics-bay,PMMA,30,near-heat`;
   };
 
   const run = async () => {
+    const currentRun = ++runId;
+    const scenario = getScenario();
     const imported = resolveImport();
     lastFormat = imported.format;
     renderIssues(imported.issues);
 
     if (!imported.parts.length) {
+      lastResults = [];
+      options.onResults?.([], scenario);
+      si.replaceChildren();
       const conv = imported.conversion
         ? `<p class="muted">Recommended export: ${imported.conversion.preferredExports.map(escapeHtml).join(', ')}. ${escapeHtml(imported.conversion.recommend)}</p>`
         : '';
@@ -327,7 +323,6 @@ avionics-bay,PMMA,30,near-heat`;
     }
     lastEdges = adj.edges;
 
-    const scenario = getScenario();
     const checked = runFullCheck(parts, scenario, lastEdges);
     lastResults = checked;
     captureUnknowns(checked, scenario);
@@ -339,6 +334,7 @@ avionics-bay,PMMA,30,near-heat`;
     const nativeNote = imported.nativeCad ? ' · native CAD import' : '';
     results.innerHTML = `
       <p class="muted">Detected format: <strong>${escapeHtml(imported.format)}</strong>${nativeNote} · ${checked.length} parts · library ${MATERIALS_LIBRARY_VERSION}</p>
+      <div class="table-wrap" role="region" aria-label="Flammability check results" tabindex="0">
       <table class="cad-table">
         <caption class="sr-only">Flammability check results for ${escapeHtml(scenario.label)}</caption>
         <thead><tr><th>Material</th><th>Match</th><th>Level</th><th>Flags</th><th>Sources</th></tr></thead>
@@ -363,14 +359,16 @@ avionics-bay,PMMA,30,near-heat`;
             .join('')}
         </tbody>
       </table>
+      </div>
       <p class="muted">Library size: ${MATERIALS_LIBRARY.length} materials/fuels (v${MATERIALS_LIBRARY_VERSION} — handbook-order bands; not ASTM certification). Unknown materials append to the session list below.</p>
     `;
+    options.onResults?.(checked, scenario);
 
     const concerns = checked.filter(
       (c) => c.level === 'high-concern' || c.level === 'review' || c.level === 'unknown',
     );
     si.textContent = 'Generating SI note…';
-    si.innerHTML = await requestSummary({
+    const summary = await requestSummary({
       topicId: options.topicId ?? 'cad-checker',
       topicTitle: 'BOM flammability check',
       scenarioLabel: scenario.label,
@@ -382,6 +380,7 @@ avionics-bay,PMMA,30,near-heat`;
         sources: c.sources,
       })),
     });
+    if (currentRun === runId) si.innerHTML = summary;
   };
 
   host.querySelector('.cad-sample')?.addEventListener('click', () => {
@@ -392,6 +391,14 @@ avionics-bay,PMMA,30,near-heat`;
     defaultSample();
   });
   host.querySelector('.cad-run')!.addEventListener('click', () => void run());
+
+  input.addEventListener('input', () => {
+    if (!lastCadImport) return;
+    lastCadImport = null;
+    lastFileName = undefined;
+    lastGltfText = undefined;
+    lastGlbBuffer = undefined;
+  });
 
   file.addEventListener('change', async () => {
     const f = file.files?.[0];
@@ -484,6 +491,7 @@ avionics-bay,PMMA,30,near-heat`;
 
   return {
     destroy: () => {
+      runId++;
       meshPreview?.destroy();
       meshPreview = null;
       host.innerHTML = '';

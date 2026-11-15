@@ -4,6 +4,15 @@ import { mountCadChecker } from './mount';
 import { ALL_DEMO_SCENARIOS, sampleBomJson } from './samples';
 import { ACCEPTED_BUILD_EXTENSIONS } from './parse-bom';
 import { importCadText, NATIVE_CAD_EXTENSIONS } from './importers/registry';
+import { escapeHtml } from './escape';
+import type { CheckResult, ConcernLevel } from './types';
+
+const RESULT_LABELS: Record<ConcernLevel, string> = {
+  'high-concern': 'High concern',
+  review: 'Needs review',
+  unknown: 'Unknown material',
+  pass: 'Pass',
+};
 
 export interface CadDemoState {
   destroy: () => void;
@@ -12,6 +21,7 @@ export interface CadDemoState {
 /** Dedicated CAD Checker application tab with guided demos. */
 export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
   let scenarioId: ScenarioId = 'lunar';
+  let demoRequestId = 0;
   const atmospheres = SCENARIOS.filter((s) => !s.fuelsOnly);
   const formats = [...ACCEPTED_BUILD_EXTENSIONS, ...NATIVE_CAD_EXTENSIONS].join(' ');
 
@@ -21,19 +31,19 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
         <p class="eyebrow">Tool</p>
         <h1>CAD / BOM Flammability Checker</h1>
         <p class="lede">
-          Load a guided demo or your own build/CAD file, pick an atmosphere, and get cited
-          pass / review / high-concern / unknown flags from the NASA materials library.
-          DXF / STEP / glTF·GLB import with part preview; DWG and proprietary CAD use convert or export paths.
+          Choose a mission atmosphere and check which parts need fire-safety review.
+          Start with a sample or load your own CAD file or parts list.
         </p>
       </header>
 
       <section class="cad-demo-scenarios" aria-label="Guided demo scenarios">
-        <h2>1 · Guided demos</h2>
-        <p class="cad-demo-hint">Click a card to load parts, set the atmosphere, and run the check — no download required.</p>
-        <div class="cad-demo-grid">
+        <h2>Guided demos</h2>
+        <p class="cad-demo-hint">Choose a sample to run a check with its mission atmosphere.</p>
+        <div class="cad-demo-workspace">
+          <div class="cad-demo-grid">
           ${ALL_DEMO_SCENARIOS.map(
             (d) => `
-            <button type="button" class="cad-demo-card" data-demo="${d.id}">
+            <button type="button" class="cad-demo-card" data-demo="${d.id}" aria-pressed="false">
               <span class="cad-demo-card-kicker">${
                 d.nativeCadUrl?.fileName.toLowerCase().endsWith('.gltf') ||
                 d.nativeCadUrl?.fileName.toLowerCase().endsWith('.glb')
@@ -49,12 +59,21 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
               <span>${d.blurb}</span>
             </button>`,
           ).join('')}
+          </div>
+          <section class="cad-demo-preview" aria-label="Check preview">
+            <h3>Results at a glance</h3>
+            <div class="cad-demo-result" role="status"></div>
+            <button type="button" class="btn cad-demo-view-results" disabled>View full results</button>
+            <details class="cad-demo-notice" hidden>
+              <summary>What to look for in this sample</summary>
+              <ul></ul>
+            </details>
+          </section>
         </div>
-        <div class="cad-demo-notice" aria-live="polite"></div>
       </section>
 
       <section class="cad-demo-atmosphere">
-        <h2>2 · Mission atmosphere</h2>
+        <h2>Mission atmosphere</h2>
         <label class="scenario-label">Atmosphere
           <select class="cad-demo-scenario-select">
             ${atmospheres
@@ -100,6 +119,8 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
   const select = container.querySelector<HTMLSelectElement>('.cad-demo-scenario-select')!;
   const notes = container.querySelector<HTMLElement>('.scenario-notes')!;
   const notice = container.querySelector<HTMLElement>('.cad-demo-notice')!;
+  const preview = container.querySelector<HTMLElement>('.cad-demo-result')!;
+  const viewResults = container.querySelector<HTMLButtonElement>('.cad-demo-view-results')!;
   const checkerHost = container.querySelector<HTMLElement>('.cad-demo-checker-host')!;
 
   const syncNotes = () => {
@@ -109,35 +130,73 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
   syncNotes();
 
   const first = ALL_DEMO_SCENARIOS[0];
+  const selectDemoCard = (demo: typeof first) => {
+    container.querySelectorAll<HTMLButtonElement>('.cad-demo-card').forEach((button) => {
+      const active = button.dataset.demo === demo.id;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    notice.querySelector('ul')!.innerHTML = demo.whatToNotice.map((note) => `<li>${escapeHtml(note)}</li>`).join('');
+    notice.hidden = !demo.whatToNotice.length;
+  };
+  selectDemoCard(first);
+
+  const showPreview = (results: CheckResult[], atmosphere: string) => {
+    viewResults.disabled = results.length === 0;
+    const levels = Object.entries(RESULT_LABELS) as [ConcernLevel, string][];
+    preview.innerHTML = results.length
+      ? `<p><strong>${results.length} ${results.length === 1 ? 'part' : 'parts'}</strong> · ${escapeHtml(atmosphere)}</p>
+        <dl class="cad-demo-counts">${levels.map(([level, label]) =>
+          `<div><dt>${label}</dt><dd>${results.filter((result) => result.level === level).length}</dd></div>`,
+        ).join('')}</dl>`
+      : '<p>No parts could be checked. Review the file or part list below.</p>';
+  };
+
+  viewResults.addEventListener('click', () => {
+    const fullResults = checkerHost.querySelector<HTMLElement>('.table-wrap');
+    if (!fullResults) return;
+    fullResults.scrollIntoView({ block: 'start' });
+    fullResults.focus({ preventScroll: true });
+  });
+
   const handle = mountCadChecker(
     checkerHost,
     () => scenarioById(scenarioId)!,
     {
-      title: '3 · Live checker',
+      title: 'Live checker',
       lead: 'Edit the BOM, upload DXF/BOM/CAD files, or use a guided demo. Optional adjacency + heater presets. Flags cite the materials library.',
       initialBom: sampleBomJson(first.parts),
       initialAdjacency: first.adjacencyCsv ?? '',
       hideDefaultSample: true,
       autoRun: true,
       topicId: 'cad-checker',
+      onResults: (results, scenario) => showPreview(results, scenario.label),
     },
   );
 
   const applyDemo = async (id: string) => {
     const demo = ALL_DEMO_SCENARIOS.find((d) => d.id === id);
     if (!demo) return;
+    const requestId = ++demoRequestId;
+    selectDemoCard(demo);
+    preview.textContent = `Checking ${demo.title}…`;
+    viewResults.disabled = true;
     scenarioId = demo.atmosphereId;
     select.value = scenarioId;
     syncNotes();
+    handle.setAdjacency('');
     if (demo.nativeCadUrl) {
       try {
         const res = await fetch(demo.nativeCadUrl.url);
+        if (!res.ok) throw new Error('CAD sample unavailable');
         const text = await res.text();
+        if (requestId !== demoRequestId) return;
         const imported = importCadText(text, demo.nativeCadUrl.fileName);
         handle.setCadImport(imported, demo.nativeCadUrl.fileName, {
           gltfText: demo.nativeCadUrl.fileName.toLowerCase().endsWith('.gltf') ? text : undefined,
         });
       } catch {
+        if (requestId !== demoRequestId) return;
         handle.setBom(sampleBomJson(demo.parts));
       }
     } else if (demo.nativeCad) {
@@ -146,16 +205,8 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
     } else {
       handle.setBom(sampleBomJson(demo.parts));
     }
-    handle.setAdjacency(demo.adjacencyCsv ?? '');
-    notice.innerHTML = `
-      <p class="cad-demo-loaded"><strong>Loaded:</strong> ${demo.title}</p>
-      <ul>${demo.whatToNotice.map((n) => `<li>${n}</li>`).join('')}</ul>
-    `;
+    if (demo.adjacencyCsv) handle.setAdjacency(demo.adjacencyCsv);
     await handle.run();
-    checkerHost.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    container.querySelectorAll('.cad-demo-card').forEach((btn) => {
-      btn.classList.toggle('is-active', btn.getAttribute('data-demo') === id);
-    });
   };
 
   container.querySelectorAll('.cad-demo-card').forEach((btn) => {
@@ -171,14 +222,9 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
     void handle.run();
   });
 
-  container.querySelector(`.cad-demo-card[data-demo="${first.id}"]`)?.classList.add('is-active');
-  notice.innerHTML = `
-    <p class="cad-demo-loaded"><strong>Loaded:</strong> ${first.title}</p>
-    <ul>${first.whatToNotice.map((n) => `<li>${n}</li>`).join('')}</ul>
-  `;
-
   return {
     destroy: () => {
+      demoRequestId++;
       handle.destroy();
       container.innerHTML = '';
     },

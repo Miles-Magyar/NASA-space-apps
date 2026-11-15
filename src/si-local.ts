@@ -1,6 +1,7 @@
 import type { SummaryRequest } from './si-client';
 import { searchCorpus } from './search';
 import { INVESTIGATIONS } from './topics/evidence/registry';
+import { escapeHtml } from './topics/cad-checker/escape';
 
 function linkifySources(sources: Array<{ label: string; url: string }>): string {
   return sources
@@ -55,7 +56,7 @@ export function buildLocalHelpbotReply(message: string): string {
     .slice(0, 3)
     .map((h) => `• <a href="${h.href}">${h.title}</a> (${h.kind})`)
     .join('<br/>');
-  return `I found curated fire-safety evidence for “${message.trim()}”.<br/>
+  return `I found curated fire-safety evidence for “${escapeHtml(message.trim())}”.<br/>
 <strong>${top.title}</strong>: ${top.snippet}<br/>
 ${extras}<br/>
 <span class="si-caveat">Local SI fallback grounded in the on-page corpus (Gemini API unreachable). Answers refuse speculation beyond these sources.</span>`;
