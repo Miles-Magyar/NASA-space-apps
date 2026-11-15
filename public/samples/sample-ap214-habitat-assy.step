@@ -1,0 +1,25 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('Flame AP214-style PRODUCT_DEFINITION chain fixture'),'2;1');
+FILE_NAME('sample-ap214-habitat-assy.step','2026-11-15',('Flame'),('NASA Space Apps'),
+  'AP214 NAUO via PRODUCT_DEFINITION','Flame in Freefall','');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN'));
+ENDSEC;
+DATA;
+/* Products */
+#10=PRODUCT('habitat-assy','Habitat Assembly','',(#11));
+#20=PRODUCT('PMMA','PMMA Cover','',(#21));
+#30=PRODUCT('Avionics_Heater','Avionics Heater','',(#31));
+/* Formation + definition chain (NAUO points at definitions, not products) */
+#12=PRODUCT_DEFINITION_FORMATION('','',#10);
+#13=PRODUCT_DEFINITION('design','',#12,#14);
+#22=PRODUCT_DEFINITION_FORMATION('','',#20);
+#23=PRODUCT_DEFINITION('design','',#22,#24);
+#32=PRODUCT_DEFINITION_FORMATION('','',#30);
+#33=PRODUCT_DEFINITION('design','',#32,#34);
+/* Assembly usages */
+#100=NEXT_ASSEMBLY_USAGE_OCCURRENCE('nauo-pmma','','',#13,#23);
+#101=NEXT_ASSEMBLY_USAGE_OCCURRENCE('nauo-heat','','',#13,#33);
+#200=MATERIAL('mat','PMMA');
+ENDSEC;
+END-ISO-10303-21;

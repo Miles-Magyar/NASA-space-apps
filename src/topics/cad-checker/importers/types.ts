@@ -1,4 +1,4 @@
-import type { BomPart, ParseIssue } from '../types';
+import type { AdjacencyEdge, BomPart, ParseIssue } from '../types';
 
 export type CadNativeFormat =
   | 'dxf'
@@ -27,6 +27,8 @@ export interface CadImportResult {
   conversion?: CadConversionHint;
   /** True when this path handled a native CAD part/assembly (vs BOM). */
   nativeCad: boolean;
+  /** Assembly-inferred adjacency (Phase 2 STEP trees). */
+  adjacency?: AdjacencyEdge[];
 }
 
 export interface CadImporter {

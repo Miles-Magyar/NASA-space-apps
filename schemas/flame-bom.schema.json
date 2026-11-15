@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flame-in-freefall.local/schemas/flame-bom.schema.json",
+  "title": "Flame BOM",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["material"],
+    "additionalProperties": true,
+    "properties": {
+      "id": { "type": "string", "minLength": 1 },
+      "material": { "type": "string", "minLength": 1 },
+      "parentId": { "type": "string" },
+      "zone": { "type": "string", "enum": ["cabin", "eva-suit", "propellant-bay"] },
+      "heaterId": { "type": "string" },
+      "maxExpectedTempC": { "type": "number" },
+      "nearbyFuel": { "type": "string" },
+      "mass": { "type": "number" },
+      "area": { "type": "number" }
+    }
+  }
+}

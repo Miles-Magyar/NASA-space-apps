@@ -1,5 +1,6 @@
 import type { BomPart } from './types';
 import { SAMPLE_HABITAT_COVER_DXF } from './sample-dxf';
+import { SAMPLE_SW_HABITAT_ASSY_STEP } from './sample-step';
 
 export interface DemoScenario {
   id: string;
@@ -11,6 +12,8 @@ export interface DemoScenario {
   adjacencyCsv?: string;
   /** When set, demo loads native CAD text (e.g. DXF) instead of BOM JSON. */
   nativeCad?: { fileName: string; text: string };
+  /** Fetch CAD/glTF from public URL (for large mesh samples). */
+  nativeCadUrl?: { fileName: string; url: string };
 }
 
 /** Guided demo BOMs for the CAD Checker application tab. */
@@ -119,6 +122,38 @@ export const NATIVE_CAD_DEMO_SCENARIOS: DemoScenario[] = [
     nativeCad: { fileName: 'sample-habitat-cover.dxf', text: SAMPLE_HABITAT_COVER_DXF },
     adjacencyCsv: `partA,partB,clearanceMm,relation
 Aluminum,PMMA,30,near-heat`,
+  },
+  {
+    id: 'step-sw-habitat-assy',
+    title: 'STEP assembly (SolidWorks→STEP hub)',
+    blurb:
+      'Phase 2 interchange: PRODUCT + NEXT_ASSEMBLY_USAGE_OCCURRENCE tree → parts with parentId and inferred near-heat adjacency. No download.',
+    atmosphereId: 'lunar',
+    whatToNotice: [
+      'STEP PRODUCT nodes become BomPart rows with stable ids',
+      'NAUO parent/child links fill parentId and adjacency CSV automatically',
+      'PMMA near Avionics_Heater flags under lunar 34% O₂',
+      'Prefer this STEP (or Flame BOM JSON) path over proprietary .sldasm in-browser',
+    ],
+    parts: [],
+    nativeCad: { fileName: 'sample-sw-habitat-assy.step', text: SAMPLE_SW_HABITAT_ASSY_STEP },
+  },
+  {
+    id: 'gltf-habitat-panel',
+    title: 'glTF panel mesh preview',
+    blurb:
+      'Habitat cover as glTF meshes (PMMA / Aluminum / Nomex) — 3D preview in-page plus materials → checkBom. No download.',
+    atmosphereId: 'lunar',
+    whatToNotice: [
+      'Mesh preview renders the uploaded glTF geometry',
+      'Material names still drive flammability (PMMA high-concern in lunar O₂)',
+      'Use this path when CAD exports glTF alongside or instead of STEP',
+    ],
+    parts: [],
+    nativeCadUrl: {
+      fileName: 'sample-habitat-panel.gltf',
+      url: './samples/sample-habitat-panel.gltf',
+    },
   },
 ];
 

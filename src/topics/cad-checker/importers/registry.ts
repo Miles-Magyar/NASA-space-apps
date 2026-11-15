@@ -1,6 +1,7 @@
 import { importDxf } from './dxf';
 import { importProprietary, PROPRIETARY_CAD_SPECS, looksLikeDwg } from './proprietary';
 import { requestCadConvert } from './convert-client';
+import { importStepAssembly } from './step-assembly';
 import type { CadImportResult, CadNativeFormat } from './types';
 import { parseBuildFile } from '../parse-bom';
 
@@ -105,27 +106,40 @@ export async function importCadUpload(file: File): Promise<CadImportResult> {
     return importProprietary(format, name, buffer);
   }
 
+  // STEP / STP as interchange hub (Phase 2)
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.step') || lower.endsWith('.stp')) {
+    const text = await file.text();
+    return importStepAssembly(text, name);
+  }
+
   // Fall through: treat as BOM/build text
   const text = await file.text();
   const parsed = parseBuildFile(text, name);
   return {
     format: parsed.format,
-    nativeCad: false,
+    nativeCad: parsed.format === 'step',
     parts: parsed.parts,
     issues: parsed.issues,
+    adjacency: parsed.adjacency,
   };
 }
 
-/** Text/DXF paste path used by tests and textarea DXF pastes. */
+/** Text/DXF/STEP paste path used by tests and guided demos. */
 export function importCadText(text: string, fileName = 'paste.dxf'): CadImportResult {
-  if (fileName.toLowerCase().endsWith('.dxf') || /^\s*0\s*\nSECTION/im.test(text)) {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith('.dxf') || /^\s*0\s*\nSECTION/im.test(text)) {
     return importDxf(text, fileName);
+  }
+  if (lower.endsWith('.step') || lower.endsWith('.stp') || /^\s*ISO-10303/im.test(text)) {
+    return importStepAssembly(text, fileName);
   }
   const parsed = parseBuildFile(text, fileName);
   return {
     format: parsed.format,
-    nativeCad: false,
+    nativeCad: parsed.format === 'step',
     parts: parsed.parts,
     issues: parsed.issues,
+    adjacency: parsed.adjacency,
   };
 }

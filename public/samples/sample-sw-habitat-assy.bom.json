@@ -1,0 +1,38 @@
+[
+  {
+    "id": "habitat-cover-assy",
+    "material": "Habitat Cover Assembly",
+    "zone": "cabin"
+  },
+  {
+    "id": "pmma-cover",
+    "material": "PMMA",
+    "zone": "cabin",
+    "parentId": "habitat-cover-assy",
+    "nearbyFuel": "n-heptane",
+    "heaterId": "avionics-bay"
+  },
+  {
+    "id": "al-frame",
+    "material": "Aluminum",
+    "zone": "cabin",
+    "parentId": "habitat-cover-assy",
+    "maxExpectedTempC": 80,
+    "heaterId": "avionics-bay"
+  },
+  {
+    "id": "avionics-heater",
+    "material": "Avionics_Heater",
+    "zone": "cabin",
+    "parentId": "habitat-cover-assy",
+    "heaterId": "avionics-bay",
+    "maxExpectedTempC": 90
+  },
+  {
+    "id": "nomex-liner",
+    "material": "Nomex",
+    "zone": "cabin",
+    "parentId": "habitat-cover-assy",
+    "maxExpectedTempC": 40
+  }
+]
