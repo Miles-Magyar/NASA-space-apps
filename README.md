@@ -22,18 +22,18 @@ npm run preview # preview dist/
 ## Deploy (Vercel)
 
 1. Import this repo into Vercel.
-2. Set environment variable `GEMINI_API_KEY` (server-only; never `VITE_`).
+2. Set `GEMINI_API_KEY`, `UPSTASH_REDIS_REST_URL`, and `UPSTASH_REDIS_REST_TOKEN` in the Vercel server environment. Use the read/write REST token from a shared Upstash Redis database. Keep these values out of `VITE_` variables.
 3. Build command: `npm run build`. Output: `dist`.
-4. Serverless routes: `api/helpbot.ts`, `api/summarize.ts`.
+4. Redeploy after adding the variables. Open Helpbot and ask about Saffire or Nomex to verify a live answer.
 
-Without `GEMINI_API_KEY`, Helpbot and SI summary panels use a **local corpus-grounded fallback** so demos still cite PSI/NTRS links.
+Helpbot uses Gemini 3.5 Flash-Lite with up to four previous messages, five server-selected research records, and a 400-token output limit. Shared Redis limits allow six model calls per IP per minute and 250 calls per UTC day across the site. Missing Redis credentials, unavailable quota storage, and exhausted quotas all switch Helpbot to local research results. SI summaries use the local corpus.
 
 Static-only hosting (e.g. Porkbun): upload the contents of `dist/`. Hash routes (`#fuels`, `#cabin-fire-safety`) need no rewrite rules. Live Gemini Helpbot requires the Vercel API routes.
 
 ## How SI is used
 
-- **Helpbot** (`POST /api/helpbot`): Gemini answers only from curated mission rows, studies, and overview excerpts passed as context; must cite PSI/NTRS/NASA URLs; refuses speculation; states Moon/Mars transfer caveats.
-- **Topic SI summary** (`POST /api/summarize`): interprets the transparent heuristic ranking for the selected atmosphere — not a fabricated numeric risk score.
+- **Helpbot** (`POST /api/helpbot`) selects cited mission rows and investigations on the server, then sends those records and the question to Gemini.
+- **Topic SI summary** explains the highest-ranked evidence for the selected atmosphere using the local corpus.
 - **Client search**: keyword heuristics only (no LLM).
 - **Evidence ranking**: oxygen-limit proximity, citation depth, cabin vs propulsion scope, scenario tags.
 

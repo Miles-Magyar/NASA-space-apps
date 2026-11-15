@@ -1,5 +1,6 @@
 import type { SourceLink } from './topics/mission-types';
 import { buildLocalHelpbotReply, buildLocalSummary } from './si-local';
+import type { HelpbotSource, HelpbotTurn } from './helpbot-contract';
 
 export interface SummaryRequest {
   topicId: string;
@@ -15,32 +16,32 @@ export interface SummaryRequest {
 }
 
 export async function requestSummary(payload: SummaryRequest): Promise<string> {
-  try {
-    const res = await fetch('/api/summarize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as { html?: string; text?: string };
-    return data.html ?? data.text ?? buildLocalSummary(payload);
-  } catch {
-    return buildLocalSummary(payload);
-  }
+  return buildLocalSummary(payload);
 }
 
-export async function requestHelpbot(message: string, history: Array<{ role: string; content: string }>) {
+export async function requestHelpbot(message: string, history: HelpbotTurn[], signal: AbortSignal): Promise<{
+  content: string;
+  localHtml: boolean;
+  sources?: HelpbotSource[];
+  notice?: string;
+}> {
+  const fallback = (notice: string) => ({ content: buildLocalHelpbotReply(message), localHtml: true, notice });
   try {
     const res = await fetch('/api/helpbot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, history }),
+      signal: AbortSignal.any([signal, AbortSignal.timeout(13_000)]),
     });
+    if (res.status === 429) return fallback('Live answers are at their usage limit. Showing local research results.');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as { reply?: string };
-    if (!data.reply) throw new Error('empty');
-    return { content: data.reply, localHtml: false };
+    const data = (await res.json()) as { reply?: unknown; sources?: unknown };
+    if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('Empty reply');
+    const sources = Array.isArray(data.sources) ? data.sources.filter((source): source is HelpbotSource =>
+      source && typeof source.label === 'string' && typeof source.url === 'string' && /^https:\/\//i.test(source.url),
+    ).slice(0, 5) : [];
+    return { content: data.reply, localHtml: false, sources };
   } catch {
-    return { content: buildLocalHelpbotReply(message), localHtml: true };
+    return fallback('Live answers are unavailable. Showing local research results.');
   }
 }

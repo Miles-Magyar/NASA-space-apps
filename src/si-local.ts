@@ -26,7 +26,7 @@ export function buildLocalSummary(payload: SummaryRequest): string {
   return `<p>For <strong>${payload.topicTitle}</strong> under <strong>${payload.scenarioLabel}</strong>, the highest-ranked curated evidence is:</p>
 <ol>${items}</ol>
 <p>${payload.scenarioNotes}</p>
-<p class="si-caveat">Local SI fallback (API offline). Citations only from the curated corpus — not a validated quantitative risk score. When gravity/O₂/pressure differ from the cited test, transfer carefully.</p>`;
+<p class="si-caveat">This summary reflects the cited test conditions. Check gravity, oxygen concentration, and pressure before applying a finding to another atmosphere.</p>`;
 }
 
 export function buildLocalHelpbotReply(message: string): string {
@@ -43,12 +43,12 @@ export function buildLocalHelpbotReply(message: string): string {
       const src = inv.sources[0];
       return `From the curated corpus: <strong>${inv.title}</strong> — ${inv.keyFinding} ${
         src ? `See <a href="${src.url}" target="_blank" rel="noopener">${src.label}</a>.` : ''
-      } Open related topics via search (e.g. Saffire → Spacecraft, Nomex → Materials/Fuels). (Local SI fallback — Gemini API unreachable.)`;
+      } Open related topics via search (e.g. Saffire → Spacecraft, Nomex → Materials/Fuels).`;
     }
   }
 
   if (!hits.length) {
-    return 'Sorry, we are having trouble communicating with our helpbot servers right now! Try keywords like Saffire, FLEX, Nomex, EMU, or SAME — or browse Cabin Fire Safety.';
+    return 'I couldn’t find a matching record. Try Saffire, FLEX, Nomex, EMU, or SAME, or browse Cabin Fire Safety.';
   }
 
   const top = hits[0]!;
@@ -58,6 +58,5 @@ export function buildLocalHelpbotReply(message: string): string {
     .join('<br/>');
   return `I found curated fire-safety evidence for “${escapeHtml(message.trim())}”.<br/>
 <strong>${top.title}</strong>: ${top.snippet}<br/>
-${extras}<br/>
-<span class="si-caveat">Local SI fallback grounded in the on-page corpus (Gemini API unreachable). Answers refuse speculation beyond these sources.</span>`;
+${extras}`;
 }
