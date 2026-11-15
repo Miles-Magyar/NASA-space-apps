@@ -1,7 +1,7 @@
 FROM node:22-bookworm-slim AS converter
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential ca-certificates curl pkg-config xz-utils \
+    && apt-get install -y --no-install-recommends build-essential ca-certificates curl pkg-config python3 xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
