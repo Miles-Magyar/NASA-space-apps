@@ -1,10 +1,34 @@
 import { requestHelpbot } from './si-client';
 import { HELPBOT_HISTORY_LIMIT, HELPBOT_MESSAGE_LIMIT, type HelpbotSource, type HelpbotTurn } from './helpbot-contract';
+import { TOPICS } from './topics';
 
 interface ChatMessage extends HelpbotTurn {
   localHtml?: boolean;
   sources?: HelpbotSource[];
   notice?: string;
+}
+
+function appendAssistantText(bubble: HTMLElement, text: string): void {
+  const markup = /\*\*([^*\n]+)\*\*|\[([^\]\n]+)\]\(#([a-z-]+)\)/g;
+  let cursor = 0;
+  for (const match of text.matchAll(markup)) {
+    const [token, bold, label, topic] = match;
+    bubble.append(text.slice(cursor, match.index));
+    if (bold) {
+      const strong = document.createElement('strong');
+      strong.textContent = bold;
+      bubble.append(strong);
+    } else if (TOPICS.some(({ id }) => id === topic)) {
+      const link = document.createElement('a');
+      link.href = `#${topic}`;
+      link.textContent = label;
+      bubble.append(link);
+    } else {
+      bubble.append(token);
+    }
+    cursor = match.index + token.length;
+  }
+  bubble.append(text.slice(cursor));
 }
 
 export function mountHelpbot(root: HTMLElement): { destroy: () => void } {
@@ -35,6 +59,7 @@ export function mountHelpbot(root: HTMLElement): { destroy: () => void } {
       const bubble = document.createElement('div');
       bubble.className = `helpbot-${message.role}`;
       if (message.localHtml) bubble.innerHTML = message.content;
+      else if (message.role === 'assistant') appendAssistantText(bubble, message.content);
       else bubble.textContent = message.content;
       if (message.notice) {
         const note = document.createElement('p');

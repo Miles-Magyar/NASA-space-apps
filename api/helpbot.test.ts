@@ -87,12 +87,29 @@ describe('Helpbot proxy', () => {
     expect(options?.headers).toMatchObject({ 'x-goog-api-key': 'test-model-key' });
     const payload = JSON.parse(String(options?.body));
     expect(payload.generationConfig.maxOutputTokens).toBe(400);
+    expect(payload.systemInstruction.parts[0].text).toContain('Flame in Freefall AI Safety Copilot');
     expect(options?.body).not.toContain('untrusted evidence');
     expect(res.json).toHaveBeenCalledWith({
       reply: 'See [1].',
       sources: expect.arrayContaining([expect.objectContaining({ url: expect.stringMatching(/^https:\/\//) })]),
     });
     expect(JSON.stringify(res.json.mock.calls)).not.toContain('test-model-key');
+  });
+
+  it('includes sourced CAD measurements and excludes nonexistent citation links', async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ result: 0 }))
+      .mockResolvedValueOnce(Response.json({ candidates: [{ content: { parts: [{ text: 'See [1] and [999].' }] } }] }));
+    const res = response();
+    await handler({ method: 'POST', body: { message: 'What is the softening temperature of PMMA in CAD?' } }, res);
+    const payload = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
+    const context = JSON.parse(payload.contents[0].parts[0].text);
+    expect(context.records).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: 'PMMA (acrylic)', context: expect.objectContaining({ softeningC: expect.objectContaining({ unit: '°C' }) }) }),
+    ]));
+    expect(context.atmospherePresets).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'mars', oxygenPercent: 26.5 }),
+    ]));
+    expect(res.json.mock.calls[0]?.[0].sources).toHaveLength(1);
   });
 
   it('keeps the old summary endpoint off the model', () => {
