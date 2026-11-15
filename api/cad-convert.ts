@@ -13,6 +13,7 @@ import {
   convertLocally,
   type ConvertResult,
 } from './lib/cad-convert-core';
+import { checkRateLimit } from './lib/rate-limit';
 
 type Res = {
   status: (code: number) => { json: (body: unknown) => void };
@@ -95,6 +96,23 @@ export default async function handler(
 
   if (!authorize(req)) {
     res.status(401).json({ ok: false, code: 'BAD_REQUEST', error: 'Unauthorized' });
+    return;
+  }
+
+  const fwd = req.headers?.['x-forwarded-for'] ?? req.headers?.['X-Forwarded-For'];
+  const clientKey = Array.isArray(fwd) ? fwd[0] : (fwd?.split(',')[0]?.trim() || 'local');
+  const max = Number(process.env.CAD_CONVERT_RATE_MAX || 20);
+  const limited = checkRateLimit(`cad-convert:${clientKey}`, {
+    windowMs: 60_000,
+    max: Number.isFinite(max) && max > 0 ? max : 20,
+  });
+  if (!limited.ok) {
+    res.status(429).json({
+      ok: false,
+      code: 'BAD_REQUEST',
+      error: `Rate limit exceeded. Retry in ~${limited.retryAfterSec ?? 60}s.`,
+      recommend: 'Export ASCII DXF locally, or wait before retrying /api/cad-convert.',
+    } satisfies ConvertResult);
     return;
   }
 

@@ -1,5 +1,6 @@
 import { normalizePart, validateParts } from './schema';
 import type { BomPart, ParseBomResult, ParseIssue } from './types';
+import { adjacencyFromParentHints, parseStepAssembly } from './importers/step-assembly';
 
 /** Detected build/BOM formats the checker accepts. */
 export type BuildFileFormat =
@@ -306,49 +307,14 @@ function parseGltfMaterials(text: string, issues: ParseIssue[]): BomPart[] {
   return parts;
 }
 
-function parseStepMaterials(text: string, issues: ParseIssue[]): BomPart[] {
-  const names = new Set<string>();
-  // Common patterns: MATERIAL('', 'PMMA') or descriptive_representation_item names
-  const patterns = [
-    /MATERIAL\s*\(\s*'[^']*'\s*,\s*'([^']+)'/gi,
-    /MATERIAL\s*\(\s*'([^']+)'/gi,
-    /\bCOLOUR_RGB\b/gi, // skip noise
-  ];
-  for (const re of [patterns[0], patterns[1]]) {
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(text))) {
-      const n = m[1]?.trim();
-      if (n && n.length > 1 && n.length < 80) names.add(n);
-    }
-  }
-  // PRODUCT ( 'name', ...
-  const prodRe = /PRODUCT\s*\(\s*'([^']+)'/gi;
-  let pm: RegExpExecArray | null;
-  while ((pm = prodRe.exec(text))) {
-    const n = pm[1]?.trim();
-    if (n && !/^[0-9.-]+$/.test(n) && n.length < 80) names.add(n);
-  }
-
-  const parts: BomPart[] = [];
-  [...names].forEach((name, i) => {
-    const part = normalizePart({ id: `step-${i}`, material: name, zone: 'cabin' }, i + 1, issues);
-    if (part) parts.push(part);
-  });
-
-  if (!parts.length) {
-    issues.push({
-      severity: 'error',
-      message:
-        'No MATERIAL/PRODUCT names extracted from STEP. Prefer exporting a materials-tagged BOM (CSV/JSON) from CAD.',
-    });
-  } else {
-    issues.push({
-      severity: 'warning',
-      message:
-        'STEP import is best-effort name extraction (not a geometry kernel). Confirm aliases and add maxExpectedTempC in a BOM overlay.',
-    });
-  }
-  return parts;
+function parseStepMaterials(
+  text: string,
+  issues: ParseIssue[],
+  fileName?: string,
+): { parts: BomPart[]; adjacency?: import('./types').AdjacencyEdge[] } {
+  const assembled = parseStepAssembly(text, fileName ?? 'assembly.step');
+  issues.push(...assembled.issues);
+  return { parts: assembled.parts, adjacency: assembled.adjacency };
 }
 
 /**
@@ -373,6 +339,7 @@ export function parseBuildFile(text: string, fileName?: string): ParseBomResult 
   }
 
   let parts: BomPart[] = [];
+  let adjacency: ParseBomResult['adjacency'];
   switch (format) {
     case 'json':
       parts = parseJsonBom(text, issues);
@@ -392,9 +359,12 @@ export function parseBuildFile(text: string, fileName?: string): ParseBomResult 
     case 'gltf':
       parts = parseGltfMaterials(text, issues);
       break;
-    case 'step':
-      parts = parseStepMaterials(text, issues);
+    case 'step': {
+      const step = parseStepMaterials(text, issues, fileName);
+      parts = step.parts;
+      adjacency = step.adjacency;
       break;
+    }
     default:
       // Last-chance: try JSON then CSV
       if (text.trim().startsWith('[') || text.trim().startsWith('{')) {
@@ -411,7 +381,12 @@ export function parseBuildFile(text: string, fileName?: string): ParseBomResult 
   }
 
   parts = validateParts(parts, issues);
-  return { format, parts, issues };
+
+  if (!adjacency?.length && parts.some((p) => p.parentId)) {
+    adjacency = adjacencyFromParentHints(parts);
+  }
+
+  return { format, parts, issues, adjacency };
 }
 
 /** @deprecated Prefer parseBuildFile — kept for call-site clarity. */

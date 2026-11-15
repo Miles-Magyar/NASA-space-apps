@@ -39,6 +39,7 @@ export function normalizePart(raw: Record<string, unknown>, row?: number, issues
 
   const idRaw = raw.id ?? raw.Id ?? raw.ID ?? raw.partId ?? raw.part_id;
   const heaterRaw = raw.heaterId ?? raw.heater_id ?? raw.HeaterId ?? raw.heater;
+  const parentRaw = raw.parentId ?? raw.parent_id ?? raw.ParentId ?? raw.parent;
 
   return {
     id: idRaw != null && String(idRaw).trim() ? String(idRaw).trim() : undefined,
@@ -57,6 +58,7 @@ export function normalizePart(raw: Record<string, unknown>, row?: number, issues
     ),
     zone,
     heaterId: heaterRaw != null && String(heaterRaw).trim() ? String(heaterRaw).trim() : undefined,
+    parentId: parentRaw != null && String(parentRaw).trim() ? String(parentRaw).trim() : undefined,
   };
 }
 

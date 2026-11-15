@@ -6,9 +6,11 @@ import { parseAdjacency } from './adjacency';
 import { HEATER_CATALOG } from './heater-catalog';
 import { buildReportPayload, reportToCsv, runFullCheck } from './engine';
 import { escapeHtml } from './escape';
-import type { AdjacencyEdge, CheckResult, UnknownMaterialCapture } from './types';
+import type { AdjacencyEdge, BomPart, CheckResult, UnknownMaterialCapture } from './types';
 import { sampleBomJson } from './samples';
 import { importCadText, importCadUpload, NATIVE_CAD_ACCEPT, isNativeCadFileName } from './importers/registry';
+import { adjacencyToCsv } from './importers/step-assembly';
+import { renderImportedPartsPreview } from './assembly-tree';
 import type { CadImportResult } from './importers/types';
 
 export interface CadCheckerOptions {
@@ -45,7 +47,7 @@ export function mountCadChecker(
   const title = options.title ?? 'CAD / BOM flammability checker';
   const lead =
     options.lead ??
-    'Upload a BOM (<code>JSON</code>/<code>CSV</code>/…) or a CAD part/assembly (<code>DXF</code> live; <code>DWG</code>, SOLIDWORKS, Inventor, CATIA, NX/Creo detected with export guidance). Optional adjacency CSV. Maps to the curated materials library — full proprietary kernels are phased (see docs).';
+    'Upload a BOM (<code>JSON</code>/<code>CSV</code>/…) or CAD (<code>DXF</code>, <code>STEP</code> assemblies with parent tree → adjacency; <code>DWG</code> via convert). SOLIDWORKS/Inventor/CATIA/NX·Creo detected with export guidance. Maps to the curated materials library.';
 
   host.innerHTML = `
     <div class="cad-checker">
@@ -88,6 +90,7 @@ export function mountCadChecker(
         </label>
       </div>
       <div class="cad-parse-issues" aria-live="polite"></div>
+      <div class="cad-import-preview-host" aria-live="polite"></div>
       <div class="cad-results" aria-live="polite"></div>
       <div class="cad-actions cad-export-actions">
         <button type="button" class="btn cad-export-json" disabled>Download results JSON</button>
@@ -110,6 +113,7 @@ export function mountCadChecker(
   const input = host.querySelector<HTMLTextAreaElement>('.cad-input')!;
   const adjInput = host.querySelector<HTMLTextAreaElement>('.cad-adjacency')!;
   const results = host.querySelector<HTMLElement>('.cad-results')!;
+  const previewHost = host.querySelector<HTMLElement>('.cad-import-preview-host')!;
   const issuesEl = host.querySelector<HTMLElement>('.cad-parse-issues')!;
   const si = host.querySelector<HTMLElement>('.cad-si')!;
   const file = host.querySelector<HTMLInputElement>('.cad-file')!;
@@ -212,15 +216,40 @@ avionics-bay,PMMA,30,near-heat`;
     URL.revokeObjectURL(url);
   };
 
+  const applyImportAdjacency = (imported: CadImportResult) => {
+    if (imported.adjacency?.length) {
+      adjInput.value = adjacencyToCsv(imported.adjacency);
+    }
+  };
+
+  const showPartsPreview = (parts: BomPart[], meta?: { format?: string; fileName?: string }) => {
+    previewHost.innerHTML = renderImportedPartsPreview(parts, meta);
+  };
+
   const resolveImport = (): CadImportResult => {
-    if (lastCadImport && lastFileName && isNativeCadFileName(lastFileName) && !lastFileName.toLowerCase().endsWith('.dxf')) {
+    const lower = lastFileName?.toLowerCase() ?? '';
+    if (
+      lastCadImport &&
+      lastFileName &&
+      (isNativeCadFileName(lastFileName) || lower.endsWith('.step') || lower.endsWith('.stp') || lastCadImport.nativeCad) &&
+      !lower.endsWith('.dxf')
+    ) {
       return lastCadImport;
     }
-    if (/^\s*0\s*\nSECTION/im.test(input.value) || (lastFileName?.toLowerCase().endsWith('.dxf') ?? false)) {
+    if (/^\s*0\s*\nSECTION/im.test(input.value) || lower.endsWith('.dxf')) {
       return importCadText(input.value, lastFileName ?? 'paste.dxf');
     }
+    if (/^\s*ISO-10303/im.test(input.value) || lower.endsWith('.step') || lower.endsWith('.stp')) {
+      return importCadText(input.value, lastFileName ?? 'paste.step');
+    }
     const parsed = parseBuildFile(input.value, lastFileName);
-    return { format: parsed.format, nativeCad: false, parts: parsed.parts, issues: parsed.issues };
+    return {
+      format: parsed.format,
+      nativeCad: parsed.format === 'step',
+      parts: parsed.parts,
+      issues: parsed.issues,
+      adjacency: parsed.adjacency,
+    };
   };
 
   const run = async () => {
@@ -260,6 +289,8 @@ avionics-bay,PMMA,30,near-heat`;
     captureUnknowns(checked, scenario);
     exportJsonBtn.disabled = false;
     exportCsvBtn.disabled = false;
+
+    showPartsPreview(parts, { format: imported.format, fileName: lastFileName });
 
     const nativeNote = imported.nativeCad ? ' · native CAD import' : '';
     results.innerHTML = `
@@ -331,16 +362,23 @@ avionics-bay,PMMA,30,near-heat`;
       ]);
       return;
     }
-    if (isNativeCadFileName(f.name)) {
+    if (isNativeCadFileName(f.name) || /\.(step|stp)$/i.test(f.name)) {
       const imported = await importCadUpload(f);
       lastCadImport = imported;
       renderIssues(imported.issues);
       // Preview extracted parts (or empty) as JSON so Check can run / user can edit
       input.value = JSON.stringify(imported.parts, null, 2);
+      applyImportAdjacency(imported);
+      showPartsPreview(imported.parts, { format: imported.format, fileName: f.name });
       if (imported.parts.length) void run();
       return;
     }
     input.value = await f.text();
+    const parsed = parseBuildFile(input.value, f.name);
+    if (parsed.adjacency?.length) {
+      adjInput.value = adjacencyToCsv(parsed.adjacency);
+    }
+    showPartsPreview(parsed.parts, { format: parsed.format, fileName: f.name });
   });
 
   adjFile.addEventListener('change', async () => {
@@ -397,6 +435,8 @@ avionics-bay,PMMA,30,near-heat`;
       lastCadImport = imported;
       input.value = JSON.stringify(imported.parts, null, 2);
       renderIssues(imported.issues);
+      applyImportAdjacency(imported);
+      showPartsPreview(imported.parts, { format: imported.format, fileName });
     },
     setAdjacency: (text: string) => {
       adjInput.value = text;
