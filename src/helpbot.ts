@@ -1,9 +1,10 @@
 import { requestHelpbot } from './si-client';
+import { HELPBOT_HISTORY_LIMIT, HELPBOT_MESSAGE_LIMIT, type HelpbotSource, type HelpbotTurn } from './helpbot-contract';
 
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
+interface ChatMessage extends HelpbotTurn {
   localHtml?: boolean;
+  sources?: HelpbotSource[];
+  notice?: string;
 }
 
 export function mountHelpbot(root: HTMLElement): { destroy: () => void } {
@@ -16,7 +17,7 @@ export function mountHelpbot(root: HTMLElement): { destroy: () => void } {
       <div class="helpbot-log" role="log" aria-label="Conversation" tabindex="0"></div>
       <form class="helpbot-form">
         <label class="sr-only" for="helpbot-input">Message</label>
-        <input id="helpbot-input" type="text" autocomplete="off" placeholder="Ask where to find fire-safety evidence…" />
+        <input id="helpbot-input" type="text" autocomplete="off" maxlength="${HELPBOT_MESSAGE_LIMIT}" placeholder="Ask where to find fire-safety evidence…" />
         <button type="submit">Send</button>
       </form>
     </section>
@@ -27,12 +28,35 @@ export function mountHelpbot(root: HTMLElement): { destroy: () => void } {
   const log = root.querySelector<HTMLElement>('.helpbot-log')!;
   const form = root.querySelector<HTMLFormElement>('.helpbot-form')!;
   const input = root.querySelector<HTMLInputElement>('#helpbot-input')!;
+  const send = form.querySelector<HTMLButtonElement>('button')!;
+  let activeRequest: AbortController | null = null;
   function renderLog() {
     log.replaceChildren(...messages.map((message) => {
       const bubble = document.createElement('div');
       bubble.className = `helpbot-${message.role}`;
       if (message.localHtml) bubble.innerHTML = message.content;
       else bubble.textContent = message.content;
+      if (message.notice) {
+        const note = document.createElement('p');
+        note.className = 'helpbot-notice';
+        note.textContent = message.notice;
+        bubble.prepend(note);
+      }
+      if (message.sources?.length) {
+        const sources = document.createElement('ul');
+        sources.className = 'helpbot-sources';
+        for (const source of message.sources) {
+          const item = document.createElement('li');
+          const link = document.createElement('a');
+          link.href = source.url;
+          link.textContent = source.label;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          item.append(link);
+          sources.append(item);
+        }
+        bubble.append(sources);
+      }
       return bubble;
     }));
     log.scrollTop = log.scrollHeight;
@@ -75,20 +99,33 @@ export function mountHelpbot(root: HTMLElement): { destroy: () => void } {
   const onSubmit = async (e: Event) => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text) return;
+    if (!text || text.length > HELPBOT_MESSAGE_LIMIT || activeRequest) return;
+    const controller = new AbortController();
+    activeRequest = controller;
+    send.disabled = true;
+    const history = messages.slice(1).filter((message) => !message.localHtml).slice(-HELPBOT_HISTORY_LIMIT)
+      .map(({ role, content }) => ({ role, content: content.slice(0, HELPBOT_MESSAGE_LIMIT) }));
     input.value = '';
     messages.push({ role: 'user', content: text });
     const pending: ChatMessage = { role: 'assistant', content: 'Thinking…' };
-    const history = messages.map(({ role, content }) => ({ role, content }));
     messages.push(pending);
     renderLog();
-    Object.assign(pending, await requestHelpbot(text, history));
-    renderLog();
+    try {
+      const reply = await requestHelpbot(text, history, controller.signal);
+      if (!controller.signal.aborted) {
+        Object.assign(pending, reply);
+        renderLog();
+      }
+    } finally {
+      activeRequest = null;
+      send.disabled = false;
+    }
   };
   form.addEventListener('submit', onSubmit);
 
   return {
     destroy: () => {
+      activeRequest?.abort();
       launcher.removeEventListener('click', onLaunch);
       root.removeEventListener('keydown', onKeydown);
       form.removeEventListener('submit', onSubmit);

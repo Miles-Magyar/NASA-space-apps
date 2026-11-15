@@ -27,7 +27,7 @@ export function initReadingScroll(root: HTMLElement, closeSidebar: () => void): 
     const pastIntro = active > 0 || (intro ? intro.getBoundingClientRect().top < -40 : true);
     if (active === 0 && chrome?.classList.contains('is-visible')) closeSidebar();
     chrome?.classList.toggle('is-visible', active > 0);
-    sun?.classList.toggle('is-visible', pastIntro);
+    sun?.classList.toggle('is-visible', active > 0);
     root.classList.toggle('past-intro', pastIntro);
   }
 
