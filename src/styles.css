@@ -349,6 +349,7 @@ img {
 .match-flame {
   width: 48px;
   height: 48px;
+  mix-blend-mode: lighten;
   opacity: calc(1 - var(--intro-progress) * 1.4);
   filter: saturate(calc(1 - var(--intro-progress))) brightness(calc(1 - var(--intro-progress) * 0.7));
   transform: scale(calc(1 - var(--intro-progress) * 0.5));
@@ -720,12 +721,37 @@ img {
 }
 
 .comprehensive-fuels-table .col-summary,
-.comprehensive-fuels-table .col-note,
 .comprehensive-fuels-table .col-scenario {
   min-width: 14rem;
   max-width: 22rem;
   white-space: normal;
   line-height: 1.4;
+}
+
+.measurement-note {
+  margin-top: .25rem;
+  color: var(--cream-dim);
+}
+
+.measurement-note summary {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.measurement-note p {
+  min-width: 10rem;
+  max-width: 18rem;
+  margin: .35rem 0 0;
+}
+
+.evidence-empty .btn {
+  margin-inline-start: .5rem;
+}
+
+.comprehensive-fuels-table tr:focus-visible,
+.catalog-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .comprehensive-fuels-table tr[data-group='propulsion'] .col-group {
@@ -795,6 +821,7 @@ img {
 
 .mission-controls select,
 .mission-controls input,
+.cad-demo-scenario-select,
 .cad-input {
   font: inherit;
   color: var(--cream);
@@ -802,6 +829,10 @@ img {
   border: 1px solid var(--line);
   padding: 0.45rem 0.55rem;
   min-width: min(100%, 16rem);
+}
+
+.cad-demo-scenario-select {
+  max-width: 100%;
 }
 
 .scenario-notes,
@@ -1008,6 +1039,7 @@ img {
   background: rgba(16, 16, 16, 0.95);
   border: 1px solid var(--line);
   padding: 0.9rem 1rem;
+  overflow-wrap: anywhere;
 }
 
 .study-card h3,
@@ -1155,13 +1187,89 @@ img {
   color: var(--cream-faint);
 }
 
+.cad-demo-workspace {
+  display: grid;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 28%);
+  gap: 1rem;
+}
+
 .cad-demo-grid {
   display: grid;
-  gap: 0.85rem;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .65rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+
+.cad-demo-preview {
+  border: 1px solid var(--line);
+  background: #151515;
+  padding: 1rem;
+}
+
+.cad-demo-preview h3 {
+  margin: 0;
+  font: 400 1.5rem var(--font-display);
+}
+
+.cad-demo-result > p {
+  margin: .55rem 0;
+  color: var(--cream-faint);
+}
+
+.cad-demo-counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+  margin: .8rem 0;
+}
+
+.cad-demo-counts div {
+  display: flex;
+  flex-direction: column-reverse;
+  padding: .5rem;
+  background: #0d0d0d;
+}
+
+.cad-demo-counts dt {
+  font-size: .82rem;
+  color: var(--cream-dim);
+}
+
+.cad-demo-counts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.cad-demo-notice summary {
+  cursor: pointer;
+}
+
+.cad-demo-checker-host .table-wrap {
+  scroll-margin-top: calc(var(--chrome-h) + 1rem);
+}
+
+@media (max-width: 790px) {
+  .cad-demo-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cad-demo-grid {
+    grid-auto-flow: column;
+    grid-auto-columns: min(78%, 15rem);
+    grid-template-columns: none;
+    overflow-x: auto;
+    padding: .25rem .2rem .5rem;
+    scroll-snap-type: x proximity;
+  }
+
+  .cad-demo-card {
+    scroll-snap-align: start;
+  }
 }
 
 .cad-demo-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
   text-align: left;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--line);
@@ -1214,11 +1322,6 @@ img {
   padding-left: 1.2rem;
 }
 
-.cad-demo-loaded {
-  margin: 0;
-  color: var(--cream);
-}
-
 .cad-demo-checker-host {
   margin-top: 1rem;
 }
@@ -1234,7 +1337,7 @@ img {
 .cad-editors {
   display: grid;
   gap: 0.85rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   margin: 0.75rem 0;
 }
 
@@ -1246,6 +1349,7 @@ img {
   gap: 0.35rem;
   color: var(--cream-dim);
   font-size: 0.9rem;
+  min-width: 0;
 }
 
 .cad-issue-list {
@@ -1304,10 +1408,14 @@ img {
   margin-bottom: 0.65rem;
 }
 
+.cad-plan-panel {
+  overflow-wrap: anywhere;
+}
+
 .cad-plan-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
 }
 
 .cad-flow {

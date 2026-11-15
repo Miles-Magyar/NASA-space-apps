@@ -9,24 +9,32 @@ import {
 } from '../ranking';
 import { requestSummary } from '../si-client';
 
-type SortKey = 'name' | 'group' | 'flash' | 'ait' | 'o2' | 'pressure' | 'loi';
+const METRIC_COLUMNS = [
+  { field: 'flashPointC', label: 'Flash point' },
+  { field: 'autoignitionC', label: 'Autoignition' },
+  { field: 'oxygenFractionPercent', label: 'Test / ref O₂' },
+  { field: 'pressurePsia', label: 'Test / ref pressure' },
+  { field: 'loiOrLocPercent', label: 'LOI / LOC' },
+] as const;
 
-function metricNum(row: MissionRow, key: SortKey): number {
-  if (key === 'group') return 0;
-  const m =
-    key === 'flash'
-      ? row.flashPointC
-      : key === 'ait'
-        ? row.autoignitionC
-        : key === 'o2'
-          ? row.oxygenFractionPercent
-          : key === 'pressure'
-            ? row.pressurePsia
-            : key === 'loi'
-              ? row.loiOrLocPercent
-              : undefined;
-  if (!m) return Number.POSITIVE_INFINITY;
-  return m.value ?? m.min ?? m.max ?? Number.POSITIVE_INFINITY;
+type MetricField = (typeof METRIC_COLUMNS)[number]['field'];
+type SortKey = 'name' | 'group' | MetricField;
+
+const EVIDENCE_LABELS: Record<MissionRow['evidenceType'], string> = {
+  'cabin-surrogate': 'Cabin fuel or surrogate',
+  'solid-material': 'Solid material',
+  'propulsion-reference': 'Propulsion reference',
+  'oxygen-compatibility': 'Oxygen compatibility',
+  'rover-habitat': 'Rover habitat',
+  detection: 'Detection',
+  suppression: 'Suppression',
+  facility: 'Test facility',
+  atmosphere: 'Atmosphere',
+  cryogenic: 'Cryogenic storage',
+};
+
+function metricNum(m: MetricValue | undefined): number | undefined {
+  return m?.value ?? m?.min ?? m?.max;
 }
 
 function fmtMetric(m: MetricValue | undefined): string {
@@ -36,11 +44,6 @@ function fmtMetric(m: MetricValue | undefined): string {
   if (m.min != null) return `≥ ${m.min} ${m.unit}`;
   if (m.max != null) return `≤ ${m.max} ${m.unit}`;
   return '—';
-}
-
-function metricNote(m: MetricValue | undefined): string {
-  if (!m?.note) return '—';
-  return m.note;
 }
 
 function groupLabel(group: MissionRow['group']): string {
@@ -82,7 +85,7 @@ export interface MissionViewState {
 
 export function renderMissionView(container: HTMLElement, data: MissionDataset): MissionViewState {
   const destroyFns: Array<() => void> = [];
-  let scenarioId: ScenarioId = data.showEarthScenario ? 'earth' : 'iss';
+  let scenarioId: ScenarioId = data.defaultScenario ?? (data.showEarthScenario ? 'earth' : 'iss');
   let filter = '';
   let groupFilter: string = 'all';
   let sortKey: SortKey = 'name';
@@ -90,6 +93,10 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
   let rankingSort: RankingSortMode = 'triage';
   let summaryRequestId = 0;
   const isFuels = data.topicId === 'fuels';
+  const groups = [...new Set(data.rows.map((row) => row.group))].sort((a, b) =>
+    groupLabel(a).localeCompare(groupLabel(b)),
+  );
+  const columns = METRIC_COLUMNS.filter(({ field }) => isFuels || data.rows.some((row) => row[field]));
 
   container.innerHTML = `
     <header class="topic-header">
@@ -107,12 +114,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       <label><span id="mission-group-label">Group</span>
         <select class="group-filter" aria-labelledby="mission-group-label">
           <option value="all">All groups</option>
-          <option value="cabin">Cabin / surrogate</option>
-          <option value="materials">Materials</option>
-          <option value="propulsion">Propulsion reference</option>
-          <option value="detection">Detection</option>
-          <option value="suppression">Suppression</option>
-          <option value="systems">Systems</option>
+          ${groups.map((group) => `<option value="${group}">${groupLabel(group)}</option>`).join('')}
         </select>
       </label>
       <p class="scenario-notes"></p>
@@ -136,6 +138,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
           }
         </p>
       </header>
+      <p class="evidence-empty" role="status" hidden>No records match these filters. <button type="button" class="btn clear-evidence-filters">Clear filters</button></p>
       <div class="table-wrap comprehensive-table${isFuels ? ' fuels-table' : ''}" role="region" aria-labelledby="mission-evidence-title" tabindex="0">
         <table class="evidence-table comprehensive-fuels-table">
           <thead>
@@ -144,16 +147,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
               <th scope="col" data-sort="group">Group</th>
               <th>Evidence</th>
               <th class="col-summary">Summary</th>
-              <th data-sort="flash">Flash point</th>
-              <th>Flash note</th>
-              <th data-sort="ait">Autoignition</th>
-              <th>AIT note</th>
-              <th data-sort="o2">Test / ref O₂</th>
-              <th>O₂ note</th>
-              <th data-sort="pressure">Test / ref pressure</th>
-              <th>Pressure note</th>
-              <th data-sort="loi">LOI / LOC</th>
-              <th>LOI / LOC note</th>
+              ${columns.map(({ field, label }) => `<th scope="col" data-sort="${field}">${label}</th>`).join('')}
               <th>Scenario comparison</th>
               <th>Investigations</th>
               <th>Sources</th>
@@ -162,7 +156,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
           <tbody></tbody>
         </table>
       </div>
-      <p class="table-footnote">Unreported or inapplicable figures appear as an em dash (—). Droplet LOI, gas-vessel LOC, and solid-material oxygen limits are not interchangeable.</p>
+      <p class="table-footnote">Dashes indicate values that the source did not report or that do not apply.${columns.some(({ field }) => field === 'loiOrLocPercent') ? ' Droplet LOI, gas-vessel LOC, and solid-material oxygen limits are not interchangeable.' : ''}</p>
     </section>
     <section class="plots-host" hidden></section>
     <section class="ranking-panel">
@@ -231,8 +225,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       <p class="eyebrow">Application</p>
       <h2>CAD / BOM flammability checker</h2>
       <p>
-        The interactive demo now lives on its own tab: load lunar/EMU/rover sample BOMs,
-        switch atmospheres, and export unknown materials for the next library pass.
+        Load a habitat, spacesuit, or rover sample. See which parts the checker flags under the selected atmosphere and download the results.
       </p>
       <p><a class="btn" href="#cad-checker">Open CAD Checker demo</a></p>
     `;
@@ -256,8 +249,9 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
           const cmp = groupLabel(a.group).localeCompare(groupLabel(b.group)) || a.name.localeCompare(b.name);
           return sortAsc ? cmp : -cmp;
         }
-        const av = metricNum(a, sortKey);
-        const bv = metricNum(b, sortKey);
+        const av = metricNum(a[sortKey]);
+        const bv = metricNum(b[sortKey]);
+        if (av == null || bv == null) return Number(av == null) - Number(bv == null);
         return sortAsc ? av - bv : bv - av;
       });
   }
@@ -274,10 +268,12 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     host.innerHTML = `
       <article class="safety-fit-card">
         <p class="safety-fit-name">${escapeHtml(fit.row.name)}</p>
-        <p class="safety-fit-meta">${escapeHtml(groupLabel(fit.row.group))} · ${escapeHtml(fit.row.evidenceType)} · heuristic fit ${fit.score}</p>
+        <p class="safety-fit-meta">${escapeHtml(EVIDENCE_LABELS[fit.row.evidenceType])} · ${escapeHtml(scenario.label)}</p>
+        <p>${escapeHtml(fit.row.scenarioNotes[scenarioIdNow] ?? fit.reasons[0] ?? '')}</p>
         <p>${escapeHtml(fit.row.summary)}</p>
         <details class="safety-fit-detail">
           <summary>Why this ranked first</summary>
+          <p>Comparison score: ${fit.score} points. The ranking combines oxygen-limit evidence, source coverage, and relevance to the selected atmosphere.</p>
           <p><strong>Published LOI / LOC:</strong> ${escapeHtml(fmtMetric(band))}</p>
           <ul class="safety-fit-reasons">
             ${fit.reasons.map((r) => `<li>${escapeHtml(r)}</li>`).join('')}
@@ -296,27 +292,29 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
 
     const rows = visibleRows();
     renderSafetyFit(rows, scenarioId);
+    container.querySelector<HTMLElement>('.evidence-empty')!.hidden = rows.length > 0;
+    container.querySelector<HTMLElement>('.comprehensive-table')!.hidden = rows.length === 0;
+    container.querySelector<HTMLElement>('.table-footnote')!.hidden = rows.length === 0;
+    container.querySelector<HTMLElement>('.ranking-panel')!.hidden = rows.length === 0;
+    siBtn.disabled = rows.length === 0 || siBtn.disabled;
 
     const tbody = container.querySelector('tbody')!;
     tbody.innerHTML = rows
       .map((r) => {
         const note = r.scenarioNotes[scenarioId] ?? '—';
         const investigations = r.investigationIds?.join(', ') || '—';
-        return `<tr data-group="${r.group}">
+        return `<tr id="evidence-${escapeHtml(r.id)}" tabindex="-1" data-group="${r.group}">
           <th scope="row" class="col-name">${escapeHtml(r.name)}</th>
           <td class="col-group">${escapeHtml(groupLabel(r.group))}</td>
-          <td>${escapeHtml(r.evidenceType)}</td>
+          <td>${escapeHtml(EVIDENCE_LABELS[r.evidenceType])}</td>
           <td class="col-summary">${escapeHtml(r.summary)}</td>
-          <td>${escapeHtml(fmtMetric(r.flashPointC))}</td>
-          <td class="col-note">${escapeHtml(metricNote(r.flashPointC))}</td>
-          <td>${escapeHtml(fmtMetric(r.autoignitionC))}</td>
-          <td class="col-note">${escapeHtml(metricNote(r.autoignitionC))}</td>
-          <td>${escapeHtml(fmtMetric(r.oxygenFractionPercent))}</td>
-          <td class="col-note">${escapeHtml(metricNote(r.oxygenFractionPercent))}</td>
-          <td>${escapeHtml(fmtMetric(r.pressurePsia))}</td>
-          <td class="col-note">${escapeHtml(metricNote(r.pressurePsia))}</td>
-          <td>${escapeHtml(fmtMetric(r.loiOrLocPercent))}</td>
-          <td class="col-note">${escapeHtml(metricNote(r.loiOrLocPercent))}</td>
+          ${columns.map(({ field }) => {
+            const metric = r[field];
+            const value = escapeHtml(fmtMetric(metric));
+            return `<td>${value}${metric?.note
+              ? `<details class="measurement-note"><summary>Test note</summary><p>${escapeHtml(metric.note)}</p></details>`
+              : ''}</td>`;
+          }).join('')}
           <td class="col-scenario">${escapeHtml(note)}</td>
           <td>${escapeHtml(investigations)}</td>
           <td class="sources-cell">${sourcesHtml(r)}</td>
@@ -344,7 +342,8 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       .join('');
 
     if (isFuels) {
-      renderPlots(plotsHost, rows);
+      plotsHost.hidden = rows.length === 0;
+      if (rows.length) renderPlots(plotsHost, rows);
     }
 
     container.querySelector('.study-grid')!.innerHTML = data.studies
@@ -405,6 +404,17 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
   };
   groupSelect.addEventListener('change', onGroup);
   destroyFns.push(() => groupSelect.removeEventListener('change', onGroup));
+
+  const clearFilters = container.querySelector<HTMLButtonElement>('.clear-evidence-filters')!;
+  const resetFilters = () => {
+    filterInput.value = filter = '';
+    groupSelect.value = groupFilter = 'all';
+    clearSummary();
+    render();
+    filterInput.focus();
+  };
+  clearFilters.addEventListener('click', resetFilters);
+  destroyFns.push(() => clearFilters.removeEventListener('click', resetFilters));
 
   const rankingSortSelect = container.querySelector<HTMLSelectElement>('.ranking-sort')!;
   rankingSortSelect.value = rankingSort;

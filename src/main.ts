@@ -36,8 +36,8 @@ function renderShell() {
         </button>
         <div class="search-wrap">
           <label class="sr-only" for="masthead-search">Search evidence</label>
-          <input id="masthead-search" type="search" placeholder="Search Saffire, Nomex, EMU…" autocomplete="off" />
-          <div class="search-results" hidden role="listbox"></div>
+          <input id="masthead-search" type="search" placeholder="Search Saffire, Nomex, EMU…" autocomplete="off" aria-controls="search-results" />
+          <nav id="search-results" class="search-results" aria-label="Search results" hidden></nav>
         </div>
       </header>
 
@@ -75,6 +75,7 @@ function renderShell() {
   const sidebar = app.querySelector<HTMLElement>('.sidebar')!;
   const searchInput = app.querySelector<HTMLInputElement>('#masthead-search')!;
   const searchResults = app.querySelector<HTMLElement>('.search-results')!;
+  const searchWrap = searchInput.closest<HTMLElement>('.search-wrap')!;
 
   const closeSidebar = (restoreFocus = false) => {
     sidebar.hidden = true;
@@ -116,24 +117,55 @@ function renderShell() {
     const hits = searchCorpus(q);
     searchResults.hidden = false;
     if (!hits.length) {
-      searchResults.innerHTML = `<p class="search-empty">No matches in the curated corpus.</p>`;
+      searchResults.innerHTML = `<p class="search-empty" role="status">No results. Try a material, study, or topic name.</p>`;
       return;
     }
     searchResults.innerHTML = hits
       .map(
         (h) =>
-          `<a class="search-hit" role="option" href="${h.href}"><span class="search-kind">${h.kind}</span><strong>${h.title}</strong><span>${h.snippet}</span></a>`,
+          `<a class="search-hit" href="${h.href}"><span class="search-kind">${h.kind}</span><strong>${h.title}</strong><span>${h.snippet}</span></a>`,
       )
       .join('');
   };
 
   searchInput.addEventListener('input', runSearch);
   searchInput.addEventListener('focus', runSearch);
-  searchResults.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('a')) {
+  searchWrap.addEventListener('focusout', (e) => {
+    if (e.relatedTarget instanceof Node && !searchWrap.contains(e.relatedTarget)) searchResults.hidden = true;
+  });
+  searchWrap.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !searchResults.hidden) {
+      e.preventDefault();
+      searchInput.focus();
       searchResults.hidden = true;
+      return;
+    }
+    if (searchResults.hidden) {
+      if (e.key !== 'ArrowDown') return;
+      runSearch();
+    }
+    const links = Array.from(searchResults.querySelectorAll<HTMLAnchorElement>('.search-hit'));
+    if (e.key === 'Enter' && e.target === searchInput && links.length) {
+      e.preventDefault();
+      links[0].click();
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (!links.length) return;
+      e.preventDefault();
+      const index = links.findIndex((link) => link === document.activeElement);
+      if (e.key === 'ArrowDown') links[Math.min(index + 1, links.length - 1)].focus();
+      else if (index > 0) links[index - 1].focus();
+      else searchInput.focus();
     }
   });
+  searchResults.addEventListener('click', (e) => {
+    const link = (e.target as HTMLElement).closest('a');
+    if (link) {
+      searchResults.hidden = true;
+      if (link.hash === location.hash) window.dispatchEvent(new HashChangeEvent('hashchange'));
+    }
+  });
+  window.addEventListener('hashchange', () => { searchResults.hidden = true; });
   document.addEventListener('click', (e) => {
     const target = e.target;
     if (!(target instanceof Element)) return;
@@ -203,7 +235,8 @@ function renderGeneral(main: HTMLElement, closeSidebar: () => void) {
       if (href && href.startsWith('#') && href.length > 1) {
         // allow hash routing
         e.preventDefault();
-        location.hash = href;
+        const study = (a as HTMLAnchorElement).dataset.study;
+        location.hash = study ? `${href}?study=${encodeURIComponent(study)}` : href;
       }
     });
   });
@@ -266,7 +299,26 @@ function renderTopic(topicId: string, closeSidebar: () => void) {
 
 function boot() {
   const closeSidebar = renderShell();
-  const renderCurrentTopic = () => renderTopic(currentTopicId(), closeSidebar);
+  const renderCurrentTopic = () => {
+    const topic = currentTopicId();
+    renderTopic(topic, closeSidebar);
+    const params = new URLSearchParams(location.hash.split('?')[1]);
+    const stop = params.get('stop');
+    if (topic === 'general' && stop) {
+      const index = OVERVIEW_SECTIONS.findIndex((section) => section.id === stop);
+      if (index >= 0) reading?.jumpTo(index + 1);
+      return;
+    }
+    const study = params.get('study');
+    const record = params.get('record');
+    const target = study ? document.getElementById(`study-${study}`)
+      : record ? document.getElementById(`evidence-${record}`) : null;
+    if (target) {
+      target.tabIndex = -1;
+      target.focus({ preventScroll: true });
+      target.scrollIntoView({ block: 'center' });
+    }
+  };
   renderCurrentTopic();
   window.addEventListener('hashchange', renderCurrentTopic);
 }

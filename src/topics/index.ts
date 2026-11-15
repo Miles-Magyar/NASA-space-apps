@@ -14,7 +14,7 @@ export const TOPICS: TopicDefinition[] = [
     title: 'Investigations',
     shortTitle: 'Investigations',
     description:
-      'First-class cards for FLEX, BASS, Saffire, SAME, ACME, SoFIE, SPICE, SLICE, and FM2 — what was measured, key findings, open questions, and PSI/NTRS links.',
+      'Findings, test conditions, and original NASA records for FLEX, BASS, Saffire, SAME, ACME, SoFIE, SPICE, SLICE, and FM2.',
     kind: 'catalog',
   },
   {

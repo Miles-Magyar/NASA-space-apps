@@ -267,6 +267,7 @@ const viableMaterials: MissionDataset = {
 
 const spacesuits: MissionDataset = {
   topicId: 'spacesuits',
+  defaultScenario: 'emu',
   title: 'Spacesuits',
   intro:
     'EMU reference atmosphere is ~100% O₂ at 4.3 psi. Fire safety here is dominated by oxygen compatibility, ignition mechanisms, and material selection — not ISS cabin LOI alone.',
@@ -1053,6 +1054,7 @@ const fuelStorage: MissionDataset = {
 
 const rovers: MissionDataset = {
   topicId: 'rovers',
+  defaultScenario: 'lunar',
   title: 'Rovers',
   intro:
     'Pressurized rovers may use habitat-like elevated-O₂ atmospheres; unpressurized rovers shift risk to suits and external systems. Partial lunar gravity lacks dense PSI combustion archives.',
