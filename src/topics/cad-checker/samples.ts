@@ -113,6 +113,7 @@ export const NATIVE_CAD_DEMO_SCENARIOS: DemoScenario[] = [
       'DXF layers become BomPart rows automatically',
       'PMMA still high-concern under lunar 34% O₂',
       'Proprietary DWG/SLDPRT/… show conversion guidance when uploaded',
+      'Upload sample-habitat-cover.fixture.dwg to exercise Phase 1 DWG→DXF unwrap',
     ],
     parts: [],
     nativeCad: { fileName: 'sample-habitat-cover.dxf', text: SAMPLE_HABITAT_COVER_DXF },
