@@ -348,6 +348,15 @@ img {
   opacity: calc(1 - var(--intro-progress) * 1.2);
 }
 
+.hero-context {
+  margin: 0.35rem 0 0;
+  max-width: 34rem;
+  font-size: clamp(0.95rem, 1.6vw, 1.05rem);
+  line-height: 1.55;
+  color: var(--cream-faint);
+  opacity: calc(1 - var(--intro-progress) * 1.25);
+}
+
 .scroll-hint {
   margin: 2.5rem 0 0;
   font-size: 0.78rem;
@@ -456,37 +465,137 @@ img {
   }
 }
 
+/* ChatGPT-like soft side nav for reading stops */
 .scroll-rail {
   position: fixed;
   top: 50%;
-  right: 0.85rem;
+  left: 0.75rem;
   transform: translateY(-50%);
   z-index: 30;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.2rem;
+  width: 2.75rem;
+  max-height: min(78vh, 36rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0.55rem 0.4rem;
+  border-radius: 1rem;
+  background: rgba(32, 32, 32, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  transition: width 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+}
+
+.scroll-rail:hover,
+.scroll-rail:focus-within {
+  width: 11.5rem;
+  background: rgba(36, 36, 36, 0.92);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
+}
+
+.scroll-rail-title {
+  display: none;
+  margin: 0 0 0.35rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.scroll-rail:hover .scroll-rail-title,
+.scroll-rail:focus-within .scroll-rail-title {
+  display: block;
 }
 
 .scroll-rail button {
-  width: 8px;
-  height: 8px;
-  padding: 0;
-  border-radius: 999px;
-  border: 1px solid var(--cream-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: 2.05rem;
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  border: none;
+  border-radius: 0.65rem;
   background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: left;
   cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.scroll-rail button:hover,
+.scroll-rail button:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  outline: none;
 }
 
 .scroll-rail button.is-active {
-  background: var(--cream);
-  transform: scale(1.25);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.scroll-rail .rail-dot {
+  flex: 0 0 auto;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.scroll-rail button.is-active .rail-dot {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.scroll-rail .rail-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0;
+  max-width: 0;
+  transition: opacity 0.16s ease, max-width 0.22s ease;
+}
+
+.scroll-rail:hover .rail-label,
+.scroll-rail:focus-within .rail-label {
+  opacity: 1;
+  max-width: 9rem;
+}
+
+@media (max-width: 720px) {
+  .scroll-rail {
+    left: 0.4rem;
+    width: 2.45rem;
+    padding: 0.4rem 0.3rem;
+    border-radius: 0.85rem;
+  }
+
+  .scroll-rail:hover,
+  .scroll-rail:focus-within {
+    width: min(11rem, calc(100vw - 1.2rem));
+  }
+
+  .general-intro {
+    padding-left: 3.25rem;
+    padding-right: 1.25rem;
+  }
 }
 
 .reading-section {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  padding: 6rem max(1.25rem, 6vw) 6rem max(1.25rem, 8vw);
+  padding: 6rem max(1.25rem, 6vw) 6rem max(1.25rem, 9vw);
 }
 
 .reading-inner {

@@ -153,15 +153,31 @@ function renderGeneral(main: HTMLElement) {
         <h1 class="hero-title">Flame in Freefall</h1>
         <img class="match-flame" src="${flameUrl}" width="64" height="64" alt="" />
         <p class="hero-sub">SI-powered fire safety insights from microgravity combustion data</p>
+        <p class="hero-context">
+          On Earth, hot air rises and pulls a flame into a teardrop. In freefall it doesn’t — flames become quiet spheres, smoke may not rush to the ceiling, and ordinary materials can burn differently when the air is richer in oxygen.
+          This site turns NASA’s orbit experiments into plain guidance for cabin fire safety, spacesuits, and the materials we fly with.
+        </p>
         <p class="scroll-hint" aria-hidden="true">Scroll</p>
       </section>
       <div class="sun-panel" aria-hidden="true">
         <img src="${starUrl}" alt="" />
       </div>
       <nav class="scroll-rail" aria-label="Reading stops">
-        <button type="button" aria-label="Title"></button>
-        ${OVERVIEW_SECTIONS.map((s) => `<button type="button" aria-label="${s.heading}"></button>`).join('')}
-        <button type="button" aria-label="${SOFIE_FEATURE.title}"></button>
+        <p class="scroll-rail-title">Stops</p>
+        <button type="button" data-stop="0" aria-label="Title">
+          <span class="rail-dot" aria-hidden="true"></span>
+          <span class="rail-label">Title</span>
+        </button>
+        ${OVERVIEW_SECTIONS.map(
+          (s, i) => `<button type="button" data-stop="${i + 1}" aria-label="${s.heading}">
+            <span class="rail-dot" aria-hidden="true"></span>
+            <span class="rail-label">${s.shortTitle ?? s.heading}</span>
+          </button>`,
+        ).join('')}
+        <button type="button" data-stop="${OVERVIEW_SECTIONS.length + 1}" aria-label="${SOFIE_FEATURE.title}">
+          <span class="rail-dot" aria-hidden="true"></span>
+          <span class="rail-label">SoFIE</span>
+        </button>
       </nav>
       ${OVERVIEW_SECTIONS.map(
         (s) => `<section class="reading-section" id="${s.id}">
