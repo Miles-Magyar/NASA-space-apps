@@ -9,7 +9,7 @@ import { getMission } from './topics/mission-data';
 import { renderMissionView, type MissionViewState } from './topics/mission-view';
 import { renderInvestigationsCatalog } from './topics/investigations/catalog';
 import { renderCadCheckerDemo, type CadDemoState } from './topics/cad-checker/demo';
-import { mountHelpbot } from './helpbot';
+import { mountHelpbot, type HelpbotHandle } from './helpbot';
 import { searchCorpus } from './search';
 
 document.documentElement.style.setProperty('--starfield-image', `url(${starfieldUrl})`);
@@ -19,7 +19,7 @@ const app = document.querySelector<HTMLElement>('#app')!;
 let reading: ReadingScrollHandles | null = null;
 let missionView: MissionViewState | null = null;
 let cadDemo: CadDemoState | null = null;
-let helpbotHandle: { destroy: () => void } | null = null;
+let helpbotHandle: HelpbotHandle | null = null;
 let menuButton: HTMLButtonElement | null = null;
 
 function currentTopicId(): string {
@@ -227,7 +227,10 @@ function renderGeneral(main: HTMLElement, closeSidebar: () => void) {
   `;
 
   reading?.destroy();
-  reading = initReadingScroll(main.querySelector('.general-root')!, closeSidebar);
+  reading = initReadingScroll(main.querySelector('.general-root')!, closeSidebar, (pastTitle) => {
+    if (pastTitle) helpbotHandle?.showWelcomePreview();
+    else helpbotHandle?.hideWelcomePreview();
+  });
 
   main.querySelectorAll('a[href^="#"]').forEach((a) => {
     a.addEventListener('click', (e) => {
@@ -243,6 +246,7 @@ function renderGeneral(main: HTMLElement, closeSidebar: () => void) {
 }
 
 function renderTopic(topicId: string, closeSidebar: () => void) {
+  helpbotHandle?.hideWelcomePreview();
   reading?.destroy();
   reading = null;
   missionView?.destroy();
