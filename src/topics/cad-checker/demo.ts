@@ -64,7 +64,7 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
         <summary>Formats, samples &amp; analysis plan</summary>
         <p class="schema-note">
           Accepted types: <code>${formats}</code>. Binary <code>.glb</code> unsupported.
-          Native CAD: <strong>DXF</strong> + <strong>STEP assemblies</strong> (PRODUCT/NAUO → parts + adjacency). <strong>DWG→DXF</strong> via fixture/<code>/api/cad-convert</code>. SLDPRT / IPT / CATPART / PRT / … detected with STEP/BOM export guidance.
+          Native CAD: <strong>DXF</strong> + <strong>STEP</strong> + <strong>glTF mesh preview</strong>. <strong>DWG→DXF</strong> via fixture/<code>/api/cad-convert</code> (optional upstream worker). SLDPRT / IPT / CATPART / PRT / … → STEP/BOM export guidance.
           Schema: <code>id</code>, <code>material</code>, <code>mass</code>, <code>area</code>,
           <code>nearbyFuel</code>, <code>maxExpectedTempC</code>, <code>zone</code>, <code>heaterId</code>.
         </p>
@@ -79,7 +79,7 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
           ·
           <a href="/samples/sample-habitat-cover.dxf" download>Sample DXF</a>
           ·
-          <a href="/samples/sample-materials.gltf" download>Sample glTF</a>
+          <a href="/samples/sample-habitat-panel.gltf" download>Sample glTF mesh</a>
         </p>
         <p class="muted">See <code>docs/CAD_NATIVE_PARTS_PLAN.md</code> for the phased SolidWorks / Inventor / CATIA / NX plan.</p>
       </details>
@@ -112,13 +112,24 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
     },
   );
 
-  const applyDemo = (id: string) => {
+  const applyDemo = async (id: string) => {
     const demo = ALL_DEMO_SCENARIOS.find((d) => d.id === id);
     if (!demo) return;
     scenarioId = demo.atmosphereId;
     select.value = scenarioId;
     syncNotes();
-    if (demo.nativeCad) {
+    if (demo.nativeCadUrl) {
+      try {
+        const res = await fetch(demo.nativeCadUrl.url);
+        const text = await res.text();
+        const imported = importCadText(text, demo.nativeCadUrl.fileName);
+        handle.setCadImport(imported, demo.nativeCadUrl.fileName, {
+          gltfText: demo.nativeCadUrl.fileName.toLowerCase().endsWith('.gltf') ? text : undefined,
+        });
+      } catch {
+        handle.setBom(sampleBomJson(demo.parts));
+      }
+    } else if (demo.nativeCad) {
       const imported = importCadText(demo.nativeCad.text, demo.nativeCad.fileName);
       handle.setCadImport(imported, demo.nativeCad.fileName);
     } else {
@@ -129,9 +140,8 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
       <p class="cad-demo-loaded"><strong>Loaded:</strong> ${demo.title}</p>
       <ul>${demo.whatToNotice.map((n) => `<li>${n}</li>`).join('')}</ul>
     `;
-    void handle.run().then(() => {
-      checkerHost.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    await handle.run();
+    checkerHost.scrollIntoView({ behavior: 'smooth', block: 'start' });
     container.querySelectorAll('.cad-demo-card').forEach((btn) => {
       btn.classList.toggle('is-active', btn.getAttribute('data-demo') === id);
     });
@@ -140,7 +150,7 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
   container.querySelectorAll('.cad-demo-card').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-demo');
-      if (id) applyDemo(id);
+      if (id) void applyDemo(id);
     });
   });
 

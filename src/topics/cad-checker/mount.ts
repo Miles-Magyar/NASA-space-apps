@@ -11,6 +11,7 @@ import { sampleBomJson } from './samples';
 import { importCadText, importCadUpload, NATIVE_CAD_ACCEPT, isNativeCadFileName } from './importers/registry';
 import { adjacencyToCsv } from './importers/step-assembly';
 import { renderImportedPartsPreview } from './assembly-tree';
+import { mountPartPreview, type PartPreviewHandle } from './part-preview';
 import type { CadImportResult } from './importers/types';
 
 export interface CadCheckerOptions {
@@ -28,7 +29,11 @@ export interface CadCheckerHandle {
   run: () => Promise<void>;
   setBom: (text: string) => void;
   setAdjacency: (text: string) => void;
-  setCadImport: (imported: CadImportResult, fileName: string) => void;
+  setCadImport: (
+    imported: CadImportResult,
+    fileName: string,
+    opts?: { gltfText?: string },
+  ) => void;
 }
 
 export function mountCadChecker(
@@ -43,6 +48,8 @@ export function mountCadChecker(
   let lastFileName: string | undefined;
   /** Cached result from native CAD upload (especially proprietary binaries). */
   let lastCadImport: CadImportResult | null = null;
+  let lastGltfText: string | undefined;
+  let meshPreview: PartPreviewHandle | null = null;
 
   const title = options.title ?? 'CAD / BOM flammability checker';
   const lead =
@@ -222,8 +229,24 @@ avionics-bay,PMMA,30,near-heat`;
     }
   };
 
-  const showPartsPreview = (parts: BomPart[], meta?: { format?: string; fileName?: string }) => {
-    previewHost.innerHTML = renderImportedPartsPreview(parts, meta);
+  const showPartsPreview = (
+    parts: BomPart[],
+    meta?: { format?: string; fileName?: string; gltfText?: string },
+  ) => {
+    meshPreview?.destroy();
+    meshPreview = null;
+    previewHost.innerHTML =
+      renderImportedPartsPreview(parts, meta) + `<div class="cad-mesh-preview-host"></div>`;
+    const meshHost = previewHost.querySelector<HTMLElement>('.cad-mesh-preview-host');
+    if (meshHost && parts.length) {
+      void mountPartPreview(meshHost, {
+        parts,
+        gltfText: meta?.gltfText ?? lastGltfText,
+        fileName: meta?.fileName,
+      }).then((handle) => {
+        meshPreview = handle;
+      });
+    }
   };
 
   const resolveImport = (): CadImportResult => {
@@ -352,6 +375,7 @@ avionics-bay,PMMA,30,near-heat`;
     if (!f) return;
     lastFileName = f.name;
     lastCadImport = null;
+    lastGltfText = undefined;
     if (f.name.toLowerCase().endsWith('.glb')) {
       input.value = '';
       renderIssues([
@@ -374,11 +398,19 @@ avionics-bay,PMMA,30,near-heat`;
       return;
     }
     input.value = await f.text();
+    if (f.name.toLowerCase().endsWith('.gltf')) {
+      lastGltfText = input.value;
+    }
     const parsed = parseBuildFile(input.value, f.name);
     if (parsed.adjacency?.length) {
       adjInput.value = adjacencyToCsv(parsed.adjacency);
     }
-    showPartsPreview(parsed.parts, { format: parsed.format, fileName: f.name });
+    showPartsPreview(parsed.parts, {
+      format: parsed.format,
+      fileName: f.name,
+      gltfText: lastGltfText,
+    });
+    if (parsed.parts.length) void run();
   });
 
   adjFile.addEventListener('change', async () => {
@@ -422,21 +454,29 @@ avionics-bay,PMMA,30,near-heat`;
 
   return {
     destroy: () => {
+      meshPreview?.destroy();
+      meshPreview = null;
       host.innerHTML = '';
     },
     run,
     setBom: (text: string) => {
       lastFileName = undefined;
       lastCadImport = null;
+      lastGltfText = undefined;
       input.value = text;
     },
-    setCadImport: (imported: CadImportResult, fileName: string) => {
+    setCadImport: (imported: CadImportResult, fileName: string, opts?: { gltfText?: string }) => {
       lastFileName = fileName;
       lastCadImport = imported;
+      lastGltfText = opts?.gltfText ?? (fileName.toLowerCase().endsWith('.gltf') ? undefined : lastGltfText);
       input.value = JSON.stringify(imported.parts, null, 2);
       renderIssues(imported.issues);
       applyImportAdjacency(imported);
-      showPartsPreview(imported.parts, { format: imported.format, fileName });
+      showPartsPreview(imported.parts, {
+        format: imported.format,
+        fileName,
+        gltfText: lastGltfText,
+      });
     },
     setAdjacency: (text: string) => {
       adjInput.value = text;
