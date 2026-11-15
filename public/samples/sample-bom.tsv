@@ -1,0 +1,4 @@
+id	material	maxExpectedTempC	zone	heaterId
+cover-1	PMMA		cabin	avionics-bay
+seal-1	PTFE	40	eva-suit	
+ring-1	Buna-N	40	eva-suit	

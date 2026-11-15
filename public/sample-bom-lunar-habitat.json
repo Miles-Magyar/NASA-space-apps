@@ -1,0 +1,28 @@
+[
+  {
+    "material": "PMMA",
+    "nearbyFuel": "n-heptane",
+    "maxExpectedTempC": 60,
+    "zone": "cabin"
+  },
+  {
+    "material": "Nomex",
+    "maxExpectedTempC": 40,
+    "zone": "cabin"
+  },
+  {
+    "material": "Aluminum",
+    "maxExpectedTempC": 80,
+    "zone": "cabin"
+  },
+  {
+    "material": "Epoxy",
+    "maxExpectedTempC": 95,
+    "zone": "cabin"
+  },
+  {
+    "material": "mystery-foam",
+    "maxExpectedTempC": 50,
+    "zone": "cabin"
+  }
+]
