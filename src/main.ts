@@ -30,7 +30,7 @@ function renderShell() {
   app.innerHTML = `
     <div class="app-shell">
       <header class="app-chrome">
-        <button type="button" class="menu-btn" aria-expanded="false" aria-controls="topic-sidebar">
+        <button type="button" class="menu-btn" aria-label="Study Topics" aria-expanded="false" aria-controls="topic-sidebar">
           <span class="menu-icon" aria-hidden="true"></span>
           <span class="menu-label">Study Topics</span>
         </button>
@@ -76,18 +76,17 @@ function renderShell() {
   const searchInput = app.querySelector<HTMLInputElement>('#masthead-search')!;
   const searchResults = app.querySelector<HTMLElement>('.search-results')!;
 
-  const closeSidebar = () => {
+  const closeSidebar = (restoreFocus = false) => {
     sidebar.hidden = true;
     app.querySelector('.app-shell')?.classList.remove('sidebar-open');
     menuButton?.setAttribute('aria-expanded', 'false');
-    menuButton?.focus();
+    if (restoreFocus) menuButton?.focus({ preventScroll: true });
   };
 
   const openSidebar = () => {
     sidebar.hidden = false;
     app.querySelector('.app-shell')?.classList.add('sidebar-open');
     menuButton?.setAttribute('aria-expanded', 'true');
-    sidebar.querySelector('a')?.focus();
   };
 
   menuButton?.addEventListener('click', () => {
@@ -97,13 +96,13 @@ function renderShell() {
 
   sidebar.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).closest('a[data-topic]');
-    if (a) closeSidebar();
+    if (a) closeSidebar(true);
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !sidebar.hidden) {
+    if (e.key === 'Escape' && !e.defaultPrevented && !sidebar.hidden) {
       e.preventDefault();
-      closeSidebar();
+      closeSidebar(true);
     }
   });
 
@@ -136,7 +135,12 @@ function renderShell() {
     }
   });
   document.addEventListener('click', (e) => {
-    if (!(e.target as HTMLElement).closest('.search-wrap')) {
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+    if (!sidebar.hidden && !sidebar.contains(target) && !menuButton?.contains(target)) {
+      closeSidebar(sidebar.contains(document.activeElement));
+    }
+    if (!target.closest('.search-wrap')) {
       searchResults.hidden = true;
     }
   });

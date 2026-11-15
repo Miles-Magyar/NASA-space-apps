@@ -107,44 +107,53 @@ img {
 .app-chrome {
   position: fixed;
   inset: 0 0 auto 0;
-  z-index: 40;
-  display: flex;
-  gap: 1rem;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: minmax(2.75rem, 1fr) minmax(0, 28rem) minmax(2.75rem, 1fr);
+  gap: clamp(.4rem, 2vw, 1rem);
   align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: linear-gradient(to bottom, rgba(5, 5, 5, 0.92), rgba(5, 5, 5, 0.55), transparent);
+  height: var(--chrome-h);
+  padding-inline: clamp(.5rem, 2vw, 1rem);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   transform: translateY(-8px);
   transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
-.app-chrome.is-visible {
+.app-chrome.is-visible,
+.sidebar-open .app-chrome {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   transform: none;
 }
 
 .menu-btn {
+  justify-self: start;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
-  border: 1px solid transparent;
-  background: rgba(20, 20, 20, 0.85);
+  border: 1px solid var(--line);
+  background: var(--sidebar);
   color: var(--cream);
   font: inherit;
   cursor: pointer;
-  padding: 0.55rem 0.75rem;
-  border-radius: 2px;
+  padding: 0 .65rem;
+  height: 2.4rem;
+  border-radius: 5px;
 }
 
 .menu-btn:hover,
-.menu-btn:focus-visible {
-  border-color: var(--line);
+.menu-btn:focus-visible,
+.menu-btn[aria-expanded="true"] {
+  background: var(--panel-2);
 }
 
 .menu-icon {
+  flex: none;
   width: 1.15rem;
   height: 0.85rem;
   background:
@@ -161,17 +170,18 @@ img {
   transition: max-width 0.25s ease, opacity 0.25s ease;
 }
 
-.menu-btn:hover .menu-label,
-.menu-btn:focus-visible .menu-label,
-.app-chrome.is-visible .menu-label {
-  max-width: 8rem;
-  opacity: 1;
+@media (min-width: 801px) {
+  .menu-btn:hover .menu-label,
+  .menu-btn:focus-visible .menu-label {
+    margin-inline-start: .55rem;
+    max-width: 8rem;
+    opacity: 1;
+  }
 }
 
 .search-wrap {
   position: relative;
-  flex: 1;
-  max-width: 28rem;
+  min-width: 0;
 }
 
 .search-wrap input {
@@ -230,13 +240,15 @@ img {
 
 .sidebar {
   position: fixed;
-  inset: 0 auto 0 0;
+  inset: var(--chrome-h) auto 0 0;
   width: min(18rem, 86vw);
   z-index: 45;
   background: var(--sidebar);
   border-right: 1px solid var(--line);
   transform: translateX(0);
   animation: slide-in 0.35s ease;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 @keyframes slide-in {
@@ -428,9 +440,10 @@ img {
 
 .sun-panel {
   position: fixed;
-  top: 12vh;
-  right: max(1rem, 4vw);
-  width: min(34vw, 420px);
+  top: calc(50% + var(--chrome-h) / 2);
+  right: .75rem;
+  width: min(44vw, 49rem);
+  transform: translateY(-50%);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.6s ease;
@@ -444,6 +457,7 @@ img {
 .sun-panel img {
   width: 100%;
   height: auto;
+  max-height: calc(100svh - var(--chrome-h) - 2rem);
   object-fit: contain;
 }
 
@@ -453,33 +467,45 @@ img {
     width: min(70vw, 280px);
     margin: 0 auto 1rem;
     opacity: 1;
+    transform: scale(1.12);
+  }
+  .sun-panel img {
+    max-height: none;
   }
 }
 
 .scroll-rail {
   position: fixed;
   top: 50%;
-  right: 0.85rem;
+  right: clamp(.2rem, 1vw, 1rem);
   transform: translateY(-50%);
   z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
+  display: grid;
 }
 
 .scroll-rail button {
-  width: 8px;
-  height: 8px;
-  padding: 0;
-  border-radius: 999px;
-  border: 1px solid var(--cream-dim);
+  display: grid;
+  place-items: center end;
+  width: 2rem;
+  height: 1.65rem;
+  padding: 0 .35rem;
+  border: 0;
   background: transparent;
   cursor: pointer;
 }
 
-.scroll-rail button.is-active {
+.scroll-rail button::after {
+  content: '';
+  width: .5rem;
+  height: 2px;
+  border-radius: 2px;
+  background: #aaa398;
+  box-shadow: 0 0 0 1px #050505;
+}
+
+.scroll-rail button:is(:hover, :focus-visible, .is-active)::after {
+  width: 1rem;
   background: var(--cream);
-  transform: scale(1.25);
 }
 
 .reading-section {
@@ -491,6 +517,12 @@ img {
 
 .reading-inner {
   max-width: 40rem;
+}
+
+@media (min-width: 901px) {
+  .sidebar-open .sun-panel { width: min(34vw, 49rem); }
+  .reading-inner { max-width: min(40rem, 45vw); }
+  .sidebar-open .reading-inner { max-width: min(40rem, calc(54vw - 18rem)); }
 }
 
 .reading-section h2 {
@@ -1258,6 +1290,7 @@ img {
   bottom: 1rem;
   z-index: 60;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   transition: opacity 0.35s ease;
 }
@@ -1265,17 +1298,74 @@ img {
 .app-chrome.is-visible ~ .helpbot,
 .app-shell.starfield .helpbot {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 
 .helpbot-launcher {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
   font: inherit;
   cursor: pointer;
   border: 1px solid var(--line);
   background: #151515;
   color: var(--cream);
-  padding: 0.65rem 0.9rem;
+  padding: 0;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.helpbot-launcher:is(:hover, [aria-expanded="true"]) { background: #282828; }
+
+.helpbot-icon {
+  position: relative;
+  width: 1.35rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-radius: .4rem;
+}
+
+.helpbot-icon::before,
+.helpbot-icon::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+}
+
+.helpbot-icon::before {
+  top: .24rem;
+  left: .24rem;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  box-shadow: .43rem 0 currentColor;
+}
+
+.helpbot-icon::after {
+  bottom: -.23rem;
+  left: .22rem;
+  width: .35rem;
+  height: .35rem;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.helpbot-launcher[aria-expanded="true"] .helpbot-icon { border: 0; }
+
+.helpbot-launcher[aria-expanded="true"] .helpbot-icon::before,
+.helpbot-launcher[aria-expanded="true"] .helpbot-icon::after {
+  inset: 50% auto auto 50%;
+  width: 1.15rem;
+  height: 2px;
+  border-radius: 1px;
+  box-shadow: none;
+  clip-path: none;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.helpbot-launcher[aria-expanded="true"] .helpbot-icon::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .helpbot-panel {
@@ -1288,6 +1378,8 @@ img {
   flex-direction: column;
   background: #101010;
   border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 36px #000b;
 }
 
 /* Author display:flex would otherwise keep the panel visible despite [hidden]. */
@@ -1298,47 +1390,27 @@ img {
 @media (max-width: 720px) {
   .helpbot-panel {
     position: fixed;
-    inset: auto 0.5rem 4.25rem 0.5rem;
+    inset: auto 0.5rem 5rem 0.5rem;
     width: auto;
     height: min(52vh, 24rem);
-    bottom: 4.25rem;
-    right: 0.5rem;
   }
-}
-
-.helpbot-panel header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.65rem 0.75rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.helpbot-panel h2 {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 400;
-  margin: 0;
-}
-
-.helpbot-close {
-  border: none;
-  background: transparent;
-  color: var(--cream);
-  font-size: 1.4rem;
-  cursor: pointer;
 }
 
 .helpbot-log {
   flex: 1;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 0.75rem;
   display: grid;
+  align-content: start;
   gap: 0.65rem;
 }
 
-.helpbot-msg p {
-  margin: 0;
+.helpbot-user,
+.helpbot-assistant {
+  overflow-wrap: anywhere;
+  border-radius: 8px;
+  white-space: pre-wrap;
 }
 
 .helpbot-user {
@@ -1358,13 +1430,14 @@ img {
 
 .helpbot-form {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.4rem;
   padding: 0.6rem;
   border-top: 1px solid var(--line);
 }
 
 .helpbot-form input {
+  min-width: 0;
   font: inherit;
   color: var(--cream);
   background: #0c0c0c;

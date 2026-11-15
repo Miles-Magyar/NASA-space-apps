@@ -29,7 +29,7 @@ export async function requestSummary(payload: SummaryRequest): Promise<string> {
   }
 }
 
-export async function requestHelpbot(message: string, history: Array<{ role: string; content: string }>): Promise<string> {
+export async function requestHelpbot(message: string, history: Array<{ role: string; content: string }>) {
   try {
     const res = await fetch('/api/helpbot', {
       method: 'POST',
@@ -39,8 +39,8 @@ export async function requestHelpbot(message: string, history: Array<{ role: str
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = (await res.json()) as { reply?: string };
     if (!data.reply) throw new Error('empty');
-    return data.reply;
+    return { content: data.reply, localHtml: false };
   } catch {
-    return buildLocalHelpbotReply(message);
+    return { content: buildLocalHelpbotReply(message), localHtml: true };
   }
 }
