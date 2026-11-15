@@ -268,7 +268,7 @@ avionics-bay,PMMA,30,near-heat`;
             .join('')}
         </tbody>
       </table>
-      <p class="muted">Library size: ${MATERIALS_LIBRARY.length} materials/fuels. Unknown materials append to the session list below.</p>
+      <p class="muted">Library size: ${MATERIALS_LIBRARY.length} materials/fuels (v${MATERIALS_LIBRARY_VERSION} — handbook-order bands; not ASTM certification). Unknown materials append to the session list below.</p>
     `;
 
     const concerns = checked.filter(

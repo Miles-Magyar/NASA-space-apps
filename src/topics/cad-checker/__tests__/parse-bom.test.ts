@@ -3,6 +3,7 @@ import { parseBuildFile, splitDelimitedLine } from '../parse-bom';
 import { checkBom, runFullCheck } from '../engine';
 import { parseAdjacency } from '../adjacency';
 import { scenarioById } from '../../mission-scenarios';
+import { MATERIALS_LIBRARY, PROVENANCE_HOST_RE } from '../../materials-library';
 
 describe('splitDelimitedLine', () => {
   it('respects quoted commas', () => {
@@ -82,6 +83,17 @@ describe('parseBuildFile', () => {
     expect(r.parts).toHaveLength(0);
     expect(r.issues.some((i) => i.severity === 'error')).toBe(true);
   });
+
+  it('reports typed JSON parse errors', () => {
+    const r = parseBuildFile('{not-json');
+    expect(r.parts).toHaveLength(0);
+    expect(r.issues.some((i) => i.severity === 'error' && /JSON parse failed/i.test(i.message))).toBe(true);
+  });
+
+  it('rejects non-numeric temperatures with typed errors', () => {
+    const r = parseBuildFile('[{"material":"PMMA","maxExpectedTempC":"hot","zone":"cabin"}]');
+    expect(r.issues.some((i) => i.severity === 'error' && /maxExpectedTempC/i.test(i.message))).toBe(true);
+  });
 });
 
 describe('checkBom', () => {
@@ -112,6 +124,16 @@ describe('checkBom', () => {
   it('applies heater preset temperatures', () => {
     const [r] = checkBom([{ material: 'ABS', zone: 'cabin', heaterId: 'cabin-heater' }], lunar);
     expect(r.part.maxExpectedTempC).toBe(120);
+  });
+});
+
+describe('materials library provenance', () => {
+  it('requires a primary citation host on every row', () => {
+    for (const m of MATERIALS_LIBRARY) {
+      expect(m.sources.length).toBeGreaterThan(0);
+      expect(m.sources.some((s) => PROVENANCE_HOST_RE.test(s.url))).toBe(true);
+      expect(['sourced', 'partial']).toContain(m.provenance);
+    }
   });
 });
 

@@ -1,5 +1,9 @@
 import type { ScenarioPreset } from '../mission-types';
-import { findMaterial, MATERIALS_LIBRARY_VERSION } from '../materials-library';
+import {
+  findMaterial,
+  MATERIALS_LIBRARY_UPDATED_AT,
+  MATERIALS_LIBRARY_VERSION,
+} from '../materials-library';
 import { applyHeaterPresets } from './heater-catalog';
 import { applyAdjacencyFlags } from './adjacency';
 import type { AdjacencyEdge, BomPart, CheckResult, ConcernLevel } from './types';
@@ -138,6 +142,7 @@ export function buildReportPayload(
       'Engineering triage aid only — not NASA-STD-6001 certification or oxygen-system flight qualification.',
     generatedAt: new Date().toISOString(),
     materialsLibraryVersion: MATERIALS_LIBRARY_VERSION,
+    materialsLibraryUpdatedAt: MATERIALS_LIBRARY_UPDATED_AT,
     atmosphere: {
       id: scenario.id,
       label: scenario.label,
@@ -152,6 +157,8 @@ export function buildReportPayload(
       material: r.part.material,
       matchedMaterial: r.matchedMaterial,
       matchedFuel: r.matchedFuel,
+      mass: r.part.mass,
+      area: r.part.area,
       zone: r.part.zone,
       heaterId: r.part.heaterId,
       maxExpectedTempC: r.part.maxExpectedTempC,
@@ -163,7 +170,7 @@ export function buildReportPayload(
 }
 
 export function reportToCsv(results: CheckResult[]): string {
-  const header = ['id', 'material', 'matched', 'level', 'zone', 'tempC', 'flags', 'sources'];
+  const header = ['id', 'material', 'matched', 'level', 'zone', 'mass', 'area', 'tempC', 'heaterId', 'flags', 'sources'];
   const rows = results.map((r) =>
     [
       r.part.id ?? '',
@@ -171,7 +178,10 @@ export function reportToCsv(results: CheckResult[]): string {
       r.matchedMaterial ?? '',
       r.level,
       r.part.zone ?? '',
+      r.part.mass ?? '',
+      r.part.area ?? '',
       r.part.maxExpectedTempC ?? '',
+      r.part.heaterId ?? '',
       r.flags.join(' | '),
       r.sources.map((s) => s.url).join(' '),
     ]

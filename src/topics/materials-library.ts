@@ -1,8 +1,12 @@
 import type { SourceLink } from './mission-types';
 
 /** Bump when library rows or schema fields change in a material way. */
-export const MATERIALS_LIBRARY_VERSION = '2026.11.14-cad-1';
+export const MATERIALS_LIBRARY_VERSION = '2026.11.14-cad-2';
 export const MATERIALS_LIBRARY_UPDATED_AT = '2026-11-14';
+
+/** Primary citation host patterns accepted for CAD library provenance. */
+export const PROVENANCE_HOST_RE =
+  /ntrs\.nasa\.gov|nasa\.gov|psi\.nasa\.gov|pnnl\.gov|chemicalsafety\.ilo\.org/i;
 
 export interface TempBand {
   value?: number;
@@ -33,6 +37,8 @@ export interface MaterialLibraryEntry {
   /** Continuous service temperature (order-of-magnitude) */
   continuousUseC?: TempBand;
   oxygenCompatibility: 'prefer' | 'review' | 'high-concern' | 'unknown';
+  /** Whether LOI/O₂ class is backed by a primary study link (vs handbook-only temps). */
+  provenance: 'sourced' | 'partial';
   flammabilityNotes: string;
   temperatureDegradationNotes: string;
   notes: string;
@@ -63,6 +69,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     decompositionC: band(360, 'Thermal decomposition order'),
     continuousUseC: band(70, 'Typical continuous-use ceiling well below Tg'),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes:
       'LOI ~17%; BASS burned acrylic spheres near 17% O₂ with forced flow. High concern for exploration O₂ habitats.',
     temperatureDegradationNotes:
@@ -88,6 +95,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     decompositionC: band(350, 'Oxidative degradation onset order'),
     continuousUseC: band(70),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes: 'LOI near air; NASA aircraft-interior thermoplastics assessments flag ABS-class flammability/smoke.',
     temperatureDegradationNotes: 'Loses structural integrity well below autoignition; soft parts near heaters are ignition precursors.',
     notes: 'Poor candidate for elevated-O₂ habitats without justification.',
@@ -109,6 +117,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     decompositionC: band(350, 'Thermal degradation order'),
     continuousUseC: band(60),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes: 'LOI near or below exploration O₂ targets; melts and drips when burning.',
     temperatureDegradationNotes: 'Melts early (~110–130°C HDPE); melted polymer can pool or transfer flame.',
     notes: 'Common packaging plastic in BOMs.',
@@ -133,6 +142,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     decompositionC: band(400, 'Degradation order'),
     continuousUseC: band(115),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes:
       'Better LOI than PMMA/ABS but still far below PTFE; included in NASA thermoplastic flammability surveys for interiors.',
     temperatureDegradationNotes: 'Softens under load well below melt; char/smoke behavior matters for SAME-style detection.',
@@ -155,6 +165,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     continuousUseC: band(80),
     autoignitionC: 420,
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes:
       'Zytel-class polyamides show strong AIT drop with rising O₂ in NASA White Sands enriched-oxygen ignition studies.',
     temperatureDegradationNotes: 'Melts and drips; moisture plasticizes and lowers use temperature.',
@@ -176,6 +187,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     softeningC: bandRange(50, 60, 'HDT @ high load is low despite high melt'),
     decompositionC: band(400, 'Significant decomposition well above continuous use'),
     oxygenCompatibility: 'prefer',
+    provenance: 'sourced',
     flammabilityNotes:
       'LOI >95%; preferred oxygen-service polymer class per ASTM G63 guidance cited by NASA — still ignitable by pneumatic impact in 100% O₂ at high pressure.',
     temperatureDegradationNotes:
@@ -198,6 +210,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     glassTransitionC: band(360, 'Very high Tg order for polyimides'),
     decompositionC: band(500, 'Char-forming high-temp polymer'),
     oxygenCompatibility: 'review',
+    provenance: 'sourced',
     flammabilityNotes:
       'Included in NASA White Sands nonmetallic O₂ ignition matrix; better than commodity plastics but not automatic pass at 100% O₂.',
     temperatureDegradationNotes: 'Maintains strength far above cabin heater temps; still qualify for pneumatic impact in enriched O₂.',
@@ -218,6 +231,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     glassTransitionC: band(360),
     decompositionC: band(500),
     oxygenCompatibility: 'review',
+    provenance: 'sourced',
     flammabilityNotes: 'Better than commodity films; still requires NASA-STD-6001 screening for the specific layup.',
     temperatureDegradationNotes: 'Excellent thermal stability vs PE/PVC films; degradation is char-forming rather than low-temp melt drip.',
     notes: 'Common in spacecraft harness BOMs.',
@@ -237,6 +251,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     decompositionC: band(300, 'Onset of significant pyrolysis order'),
     continuousUseC: band(105),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes: 'Organic matrix boards can ignite and produce smoke; treat electronics overheat as SAME-relevant smoke source.',
     temperatureDegradationNotes: 'Above Tg the laminate softens; char/pyrolysis gases drive detection and toxicity concerns.',
     notes: 'Map PCB materials explicitly in CAD/BOM exports.',
@@ -255,6 +270,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     continuousUseC: band(200, 'Typical silicone continuous use'),
     decompositionC: band(350),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes:
       'NASA White Sands tested silicone among nonmetallics — AIT and pneumatic impact worsen as O₂ rises toward 100%.',
     temperatureDegradationNotes: 'Flexible at cabin temps; degradation produces silica ash and volatiles rather than a sharp melt pool.',
@@ -274,6 +290,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     continuousUseC: band(200),
     decompositionC: band(400),
     oxygenCompatibility: 'review',
+    provenance: 'sourced',
     flammabilityNotes: 'Better oxygen-service candidate than Buna-N/silicone in NASA ignition matrices; still impact-test for the duty.',
     temperatureDegradationNotes: 'Holds sealing force at elevated temp better than commodity rubbers; chemical attack can precede thermal failure.',
     notes: 'Grade-specific oxygen-service data required.',
@@ -292,6 +309,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     continuousUseC: band(100),
     decompositionC: band(250),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes: 'Among the poorer nonmetallics in NASA enriched-O₂ AIT / impact testing.',
     temperatureDegradationNotes: 'Hardens/cracks with heat and age; not for oxygen service.',
     notes: 'Flag immediately in CAD O₂-wetted zones.',
@@ -311,6 +329,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     decompositionC: band(400, 'Char-forming aramid'),
     continuousUseC: band(200),
     oxygenCompatibility: 'review',
+    provenance: 'sourced',
     flammabilityNotes:
       'LOI ~31% — passes Earth and ~30% O₂ clothing charts but may fail future >34% O₂ spacecraft atmospheres (NASA textile O₂ chart).',
     temperatureDegradationNotes: 'Chars rather than melt-drips; still verify finish/weave under NASA-STD-6001 Test 1.',
@@ -330,6 +349,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     decompositionC: band(300, 'Cotton fraction chars/pyrolyzes'),
     continuousUseC: band(80),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes: 'Cotton LOI ~19% fails enriched-O₂ clothing charts; BASS used related fabric systems.',
     temperatureDegradationNotes: 'Cellulosic fraction degrades and can smolder; glass fraction does not melt at cabin-relevant temps.',
     notes: 'Borderline under exploration O₂.',
@@ -348,6 +368,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     meltingC: bandRange(1100, 1200, 'E-glass softening/melt order'),
     continuousUseC: band(400),
     oxygenCompatibility: 'prefer',
+    provenance: 'sourced',
     flammabilityNotes: 'LOI ~100% on NASA textile chart; binders/resins dominate flammability of finished cloth.',
     temperatureDegradationNotes: 'Glass itself is thermally stable at cabin temps; sizing/resin is the weak link.',
     notes: 'Always specify binder/resin in the BOM.',
@@ -364,6 +385,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     meltingC: band(660, 'Pure Al melt; alloys near 500–650°C solidus'),
     continuousUseC: band(150, 'Structural allowables often limit use far below melt'),
     oxygenCompatibility: 'review',
+    provenance: 'sourced',
     flammabilityNotes:
       'Not ranked by LOI; oxygen-system risk is particulate/impact promoted ignition, not melting in cabin air.',
     temperatureDegradationNotes: 'Strength drops with temperature long before melt; molten Al is an extreme fault, not a normal heater scenario.',
@@ -381,6 +403,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     meltingC: bandRange(1375, 1450, '304/316 solidus–liquidus order'),
     continuousUseC: band(500, 'Depends on grade and load'),
     oxygenCompatibility: 'prefer',
+    provenance: 'sourced',
     flammabilityNotes: 'Preferred for many oxygen-service components when designed to oxygen-compatibility standards.',
     temperatureDegradationNotes: 'No cabin-relevant melt risk; oxidation and ignition of contaminants on surfaces matter more.',
     notes: 'Still design against particle impact in high-pressure O₂.',
@@ -397,6 +420,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     meltingC: bandRange(1600, 1660, 'Alloy solidus order'),
     continuousUseC: band(400),
     oxygenCompatibility: 'review',
+    provenance: 'sourced',
     flammabilityNotes: 'Can sustain metal fire in high-pressure oxygen under promoted ignition — specialist O₂-system review required.',
     temperatureDegradationNotes: 'High melt point; ignition risk is oxygen-system specific, not cabin heater melt.',
     notes: 'Do not treat as automatically safer than steel in O₂ service.',
@@ -413,9 +437,10 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     meltingC: band(1085),
     continuousUseC: band(200),
     oxygenCompatibility: 'review',
+    provenance: 'sourced',
     flammabilityNotes: 'Electrical fault energy can ignite nearby nonmetallics even when copper itself does not “burn” in cabin air.',
     temperatureDegradationNotes: 'Softens and oxidizes with heat; insulation on copper wires is usually the flammability driver.',
-    notes: 'Pair with wire-insulation material rows in BOMs.',
+    notes: 'Pair with wire-insulation material rows in BOMs. Melting point is handbook-order; O₂ class remains review pending system-specific testing.',
     sources: [
       { label: 'NASA oxygen compatibility', url: 'https://ntrs.nasa.gov/citations/20070016582' },
       { label: 'SAME / fire safety overview', url: 'https://www.nasa.gov/missions/station/studying-combustion-and-fire-safety/' },
@@ -431,6 +456,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     autoignitionC: 204,
     meltingC: band(-91, 'Freezing point order'),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes: 'FLEX droplet surrogate; low flash point.',
     temperatureDegradationNotes: 'Volatile liquid — vapor flammability dominates over solid degradation.',
     notes: 'Use for nearbyFuel CAD checks.',
@@ -446,6 +472,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     autoignitionC: 385,
     meltingC: band(-98),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes: 'FLEX alcohol surrogate.',
     temperatureDegradationNotes: 'Volatile; flash hazard near warm surfaces.',
     notes: 'Use for nearbyFuel CAD checks.',
@@ -460,6 +487,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     autoignitionC: 537,
     meltingC: band(-182, 'Cryogenic melt/freeze'),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes: 'Gas LOC ~12% O₂ order; cryogenic liquid methane is a separate storage hazard.',
     temperatureDegradationNotes: 'Boil-off creates flammable vapor clouds — CFM/leak framing.',
     notes: 'Keep gas vs liquid rows distinct in analysis.',
@@ -474,6 +502,7 @@ export const MATERIALS_LIBRARY: MaterialLibraryEntry[] = [
     autoignitionC: 500,
     meltingC: band(-259),
     oxygenCompatibility: 'high-concern',
+    provenance: 'sourced',
     flammabilityNotes: 'Wide vapor flammability envelope once boiled off.',
     temperatureDegradationNotes: 'Extreme cryogen — warming to ambient creates large flammable volumes.',
     notes: 'Storage fire thinking, not cabin LOI.',
