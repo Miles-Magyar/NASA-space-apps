@@ -147,9 +147,10 @@ function renderShell() {
 
   helpbotHandle?.destroy();
   helpbotHandle = mountHelpbot(app.querySelector('.helpbot')!);
+  return closeSidebar;
 }
 
-function renderGeneral(main: HTMLElement) {
+function renderGeneral(main: HTMLElement, closeSidebar: () => void) {
   main.innerHTML = `
     <div class="general-root">
       <section class="general-intro">
@@ -194,7 +195,7 @@ function renderGeneral(main: HTMLElement) {
   `;
 
   reading?.destroy();
-  reading = initReadingScroll(main.querySelector('.general-root')!);
+  reading = initReadingScroll(main.querySelector('.general-root')!, closeSidebar);
 
   main.querySelectorAll('a[href^="#"]').forEach((a) => {
     a.addEventListener('click', (e) => {
@@ -208,7 +209,7 @@ function renderGeneral(main: HTMLElement) {
   });
 }
 
-function renderTopic(topicId: string) {
+function renderTopic(topicId: string, closeSidebar: () => void) {
   reading?.destroy();
   reading = null;
   missionView?.destroy();
@@ -227,7 +228,7 @@ function renderTopic(topicId: string) {
   if (topicId === 'general') {
     shell.classList.remove('starfield');
     chrome?.classList.remove('is-visible');
-    renderGeneral(main);
+    renderGeneral(main, closeSidebar);
     return;
   }
 
@@ -264,9 +265,10 @@ function renderTopic(topicId: string) {
 }
 
 function boot() {
-  renderShell();
-  renderTopic(currentTopicId());
-  window.addEventListener('hashchange', () => renderTopic(currentTopicId()));
+  const closeSidebar = renderShell();
+  const renderCurrentTopic = () => renderTopic(currentTopicId(), closeSidebar);
+  renderCurrentTopic();
+  window.addEventListener('hashchange', renderCurrentTopic);
 }
 
 boot();

@@ -264,6 +264,7 @@ avionics-bay,PMMA,30,near-heat`;
     const nativeNote = imported.nativeCad ? ' · native CAD import' : '';
     results.innerHTML = `
       <p class="muted">Detected format: <strong>${escapeHtml(imported.format)}</strong>${nativeNote} · ${checked.length} parts · library ${MATERIALS_LIBRARY_VERSION}</p>
+      <div class="table-wrap" role="region" aria-label="Flammability check results" tabindex="0">
       <table class="cad-table">
         <caption class="sr-only">Flammability check results for ${escapeHtml(scenario.label)}</caption>
         <thead><tr><th>Material</th><th>Match</th><th>Level</th><th>Flags</th><th>Sources</th></tr></thead>
@@ -288,6 +289,7 @@ avionics-bay,PMMA,30,near-heat`;
             .join('')}
         </tbody>
       </table>
+      </div>
       <p class="muted">Library size: ${MATERIALS_LIBRARY.length} materials/fuels (v${MATERIALS_LIBRARY_VERSION} — handbook-order bands; not ASTM certification). Unknown materials append to the session list below.</p>
     `;
 

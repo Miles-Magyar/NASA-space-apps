@@ -120,7 +120,7 @@ img {
   visibility: hidden;
   pointer-events: none;
   transform: translateY(-8px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
+  transition: opacity .12s ease-out, transform .12s ease-out, visibility 0s linear .12s;
 }
 
 .app-chrome.is-visible,
@@ -129,6 +129,7 @@ img {
   visibility: visible;
   pointer-events: auto;
   transform: none;
+  transition: opacity .35s ease, transform .35s ease;
 }
 
 .menu-btn {
@@ -550,8 +551,8 @@ img {
 
 /* Mission pages */
 .mission-root {
-  padding: calc(var(--chrome-h) + 1.5rem) max(1rem, 4vw) 6rem;
-  max-width: 1200px;
+  min-width: 0;
+  padding: calc(var(--chrome-h) + 1.5rem) clamp(.875rem, 2vw, 2rem) 6rem;
 }
 
 .topic-header .eyebrow {
@@ -922,7 +923,7 @@ img {
 .record-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
 }
 
 .study-card,
@@ -1021,9 +1022,7 @@ img {
 }
 
 .cad-demo-root {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1.5rem 1.25rem 3rem;
+  padding-bottom: 3rem;
 }
 
 .cad-demo-hero h1 {
@@ -1292,7 +1291,7 @@ img {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.35s ease;
+  transition: opacity .12s ease-out, visibility 0s linear .12s;
 }
 
 .app-chrome.is-visible ~ .helpbot,
@@ -1300,6 +1299,7 @@ img {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+  transition: opacity .35s ease;
 }
 
 .helpbot-launcher {
