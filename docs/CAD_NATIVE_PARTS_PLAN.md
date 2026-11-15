@@ -79,10 +79,16 @@ Code layout:
    - `public/samples/sample-sw-habitat-assy.bom.json`
 4. **Guided demo** — STEP assembly card (no download)
 
+**Also in this PR (integration follow-through):**
+
+- Imported-parts **assembly tree preview** in CAD Checker (structure visibility; not a geometry kernel)
+- AP214-style `PRODUCT_DEFINITION` / `PRODUCT_DEFINITION_FORMATION` fixture + NAUO resolution
+- `/api/cad-convert` in-memory rate limit (`CAD_CONVERT_RATE_MAX`)
+
 **Still open:**
 
-- [ ] Richer AP214 product-definition chains from real vendor STEP dumps
-- [ ] Optional glTF preview mesh (see Future UX below)
+- [ ] Real vendor STEP dumps for broader AP214 coverage
+- [ ] Optional glTF mesh viewer (Future UX — 3D, beyond the tree preview)
 
 ### Phase 3 — licensed deep integrations
 
@@ -94,7 +100,7 @@ Code layout:
 Keep start-page work separate. Later CAD-only UI pass:
 
 1. **CAD Checker visual chrome** — clearer hierarchy for demos / atmosphere / live results; less developer-tool density while staying tool-first.
-2. **Part preview when you add a file** — show the imported part/assembly (glTF from CAD when available; otherwise a structured tree of PRODUCT/`parentId` nodes). Materials-tagged BOM remains the analysis source of truth; preview must not invent flammability data.
+2. **Part preview when you add a file** — ~~structured tree of PRODUCT/`parentId` nodes~~ (shipped as CAD Checker import preview). Still open: glTF/mesh viewer when CAD provides geometry. Materials-tagged BOM remains the analysis source of truth; preview must not invent flammability data.
 
 ## Demo promise (no download)
 
@@ -110,4 +116,5 @@ Keep start-page work separate. Later CAD-only UI pass:
 - [x] STEP assembly produces parts with `parentId` and inferred adjacency
 - [x] SolidWorks→STEP (stand-in) + Flame BOM fixtures in `public/samples/`
 - [ ] Real DWG round-trips via configured upstream in staging
-- [ ] Part visual preview in CAD Checker UI (Future UX)
+- [x] Imported-parts assembly tree preview in CAD Checker
+- [ ] glTF/mesh part viewer (Future UX)

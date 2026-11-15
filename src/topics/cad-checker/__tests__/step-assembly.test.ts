@@ -4,7 +4,8 @@ import {
   importStepAssembly,
   parseStepAssembly,
 } from '../importers/step-assembly';
-import { SAMPLE_SW_HABITAT_ASSY_STEP } from '../sample-step';
+import { SAMPLE_AP214_HABITAT_ASSY_STEP, SAMPLE_SW_HABITAT_ASSY_STEP } from '../sample-step';
+import { buildAssemblyForest, renderImportedPartsPreview } from '../assembly-tree';
 import { parseBuildFile } from '../parse-bom';
 import { checkBom } from '../engine';
 import { scenarioById } from '../../mission-scenarios';
@@ -56,4 +57,24 @@ describe('STEP assembly Phase 2', () => {
     const r = parseBuildFile(JSON.stringify(bom), 'sample-sw-habitat-assy.bom.json');
     expect(r.adjacency?.length).toBeGreaterThan(0);
   });
+
+  it('resolves AP214 PRODUCT_DEFINITION → PRODUCT for NAUO parents', () => {
+    const r = parseStepAssembly(SAMPLE_AP214_HABITAT_ASSY_STEP, 'sample-ap214-habitat-assy.step');
+    const pmma = r.parts.find((p) => /pmma/i.test(p.material));
+    expect(pmma?.parentId).toBe('habitat-assy');
+    expect(r.adjacency.some((e) => e.relation === 'near-heat')).toBe(true);
+  });
+
+  it('renders an imported assembly tree preview', () => {
+    const imported = importStepAssembly(SAMPLE_SW_HABITAT_ASSY_STEP);
+    const forest = buildAssemblyForest(imported.parts);
+    expect(forest.length).toBeGreaterThan(0);
+    const html = renderImportedPartsPreview(imported.parts, {
+      format: 'step',
+      fileName: 'sample-sw-habitat-assy.step',
+    });
+    expect(html).toContain('cad-assembly-tree');
+    expect(html).toMatch(/PMMA/i);
+  });
 });
+
