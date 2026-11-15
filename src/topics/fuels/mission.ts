@@ -1,5 +1,5 @@
-import type { MissionDataset, MissionRow } from '../mission-types';
-import { studiesByIds } from '../evidence/registry';
+import type { MissionDataset, MissionRow } from '../mission-types.js';
+import { studiesByIds } from '../evidence/registry.js';
 
 const cabinRows: MissionRow[] = [
   {

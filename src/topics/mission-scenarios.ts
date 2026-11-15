@@ -1,4 +1,4 @@
-import type { ScenarioPreset } from './mission-types';
+import type { ScenarioPreset } from './mission-types.js';
 
 /** Sourced atmosphere presets for mission comparison. */
 export const SCENARIOS: ScenarioPreset[] = [

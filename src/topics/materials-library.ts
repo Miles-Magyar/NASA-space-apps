@@ -1,4 +1,4 @@
-import type { SourceLink } from './mission-types';
+import type { SourceLink } from './mission-types.js';
 
 /** Bump when library rows or schema fields change in a material way. */
 export const MATERIALS_LIBRARY_VERSION = '2026.11.14-cad-2';

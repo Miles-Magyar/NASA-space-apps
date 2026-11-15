@@ -6,7 +6,7 @@ import {
   unwrapFixtureDwg,
   wrapDxfAsFixtureDwg,
   CAD_CONVERT_MAX_BYTES,
-} from './cad-convert-core';
+} from './cad-convert-core.js';
 
 const sampleDxf = readFileSync(
   resolve(__dirname, '../../public/samples/sample-habitat-cover.dxf'),

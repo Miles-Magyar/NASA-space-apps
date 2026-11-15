@@ -1,7 +1,7 @@
-import { INVESTIGATIONS } from '../../src/topics/evidence/registry';
-import { missions } from '../../src/topics/mission-data';
-import { MATERIALS_LIBRARY } from '../../src/topics/materials-library';
-import type { SourceLink } from '../../src/topics/mission-types';
+import { INVESTIGATIONS } from '../../src/topics/evidence/registry.js';
+import { missions } from '../../src/topics/mission-data.js';
+import { MATERIALS_LIBRARY } from '../../src/topics/materials-library.js';
+import type { SourceLink } from '../../src/topics/mission-types.js';
 
 const records: Array<{ title: string; terms: string; evidence: string; context: object; sources: SourceLink[] }> = [
   ...Object.values(INVESTIGATIONS).map((study) => ({
