@@ -22,12 +22,12 @@ Accept real engineering part/assembly files and produce the same materials-tagge
 - glTF mesh preview + procedural fallback; DWG upstream worker
 - **GLB** binary parse + preview
 - CAD Checker **chrome** (workflow strip + Inputs / Preview / Results panels)
-- Phase 3 scaffold: `docs/FLAME_BOM_EXPORT.md`, `schemas/flame-bom.schema.json`, `npm run flame-bom:validate`
+- Reusable Flame BOM download from checked imports, with a JSON schema and CLI validator
 
 ## Still open
 
 - [ ] Staging LibreDWG/ODA binary (`CAD_CONVERT_BIN`)
-- [ ] OrbitControls / richer mesh UI
+- [x] Interactive orbit, zoom, reset, and readable fallback for mesh previews
 - [ ] Licensed desktop add-in writing Flame BOM JSON
 
 ## Success criteria

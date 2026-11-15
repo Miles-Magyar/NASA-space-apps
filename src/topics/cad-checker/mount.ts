@@ -45,6 +45,7 @@ export function mountCadChecker(
 ): CadCheckerHandle {
   const unknownSession: UnknownMaterialCapture[] = [];
   let lastResults: CheckResult[] = [];
+  let lastCheckedBom: BomPart[] = [];
   let runId = 0;
   let lastFormat = 'json';
   let lastEdges: AdjacencyEdge[] = [];
@@ -116,6 +117,7 @@ export function mountCadChecker(
         <h3 class="cad-panel-title">Flammability results</h3>
         <div class="cad-results" aria-live="polite"></div>
         <div class="cad-actions cad-export-actions">
+          <button type="button" class="btn cad-export-bom" disabled>Download Flame BOM JSON</button>
           <button type="button" class="btn cad-export-json" disabled>Download results JSON</button>
           <button type="button" class="btn cad-export-csv" disabled>Download results CSV</button>
         </div>
@@ -149,6 +151,7 @@ export function mountCadChecker(
   const clearBtn = host.querySelector<HTMLButtonElement>('.cad-clear-unknowns')!;
   const exportJsonBtn = host.querySelector<HTMLButtonElement>('.cad-export-json')!;
   const exportCsvBtn = host.querySelector<HTMLButtonElement>('.cad-export-csv')!;
+  const exportBomBtn = host.querySelector<HTMLButtonElement>('.cad-export-bom')!;
 
   const unknownsPayload = () =>
     JSON.stringify(
@@ -264,6 +267,8 @@ avionics-bay,PMMA,30,near-heat`;
       }).then((handle) => {
         if (host.contains(meshHost)) meshPreview = handle;
         else handle.destroy();
+      }).catch(() => {
+        if (host.contains(meshHost)) meshHost.textContent = 'The 3D preview could not load. The part list and flammability results are still available.';
       });
     }
   };
@@ -296,6 +301,8 @@ avionics-bay,PMMA,30,near-heat`;
 
     if (!imported.parts.length) {
       lastResults = [];
+      lastCheckedBom = [];
+      showPartsPreview([], { format: imported.format, fileName: lastFileName });
       options.onResults?.([], scenario);
       si.replaceChildren();
       const conv = imported.conversion
@@ -304,6 +311,7 @@ avionics-bay,PMMA,30,near-heat`;
       results.innerHTML = `<p class="cad-error">No parts found. Fix parse issues above or try another build/CAD file type.</p>${conv}`;
       exportJsonBtn.disabled = true;
       exportCsvBtn.disabled = true;
+      exportBomBtn.disabled = true;
       return;
     }
 
@@ -325,9 +333,11 @@ avionics-bay,PMMA,30,near-heat`;
 
     const checked = runFullCheck(parts, scenario, lastEdges);
     lastResults = checked;
+    lastCheckedBom = imported.parts;
     captureUnknowns(checked, scenario);
     exportJsonBtn.disabled = false;
     exportCsvBtn.disabled = false;
+    exportBomBtn.disabled = false;
 
     showPartsPreview(parts, { format: imported.format, fileName: lastFileName });
 
@@ -418,20 +428,16 @@ avionics-bay,PMMA,30,near-heat`;
         issues: parsed.issues,
       };
       input.value = JSON.stringify(parsed.parts, null, 2);
-      renderIssues(parsed.issues);
-      showPartsPreview(parsed.parts, { format: 'glb', fileName: f.name, glbBuffer: buffer });
-      if (parsed.parts.length) void run();
+      void run();
       return;
     }
     if (isNativeCadFileName(f.name) || /\.(step|stp)$/i.test(f.name)) {
       const imported = await importCadUpload(f);
       lastCadImport = imported;
-      renderIssues(imported.issues);
       // Preview extracted parts (or empty) as JSON so Check can run / user can edit
       input.value = JSON.stringify(imported.parts, null, 2);
       applyImportAdjacency(imported);
-      showPartsPreview(imported.parts, { format: imported.format, fileName: f.name });
-      if (imported.parts.length) void run();
+      void run();
       return;
     }
     input.value = await f.text();
@@ -442,12 +448,7 @@ avionics-bay,PMMA,30,near-heat`;
     if (parsed.adjacency?.length) {
       adjInput.value = adjacencyToCsv(parsed.adjacency);
     }
-    showPartsPreview(parsed.parts, {
-      format: parsed.format,
-      fileName: f.name,
-      gltfText: lastGltfText,
-    });
-    if (parsed.parts.length) void run();
+    void run();
   });
 
   adjFile.addEventListener('change', async () => {
@@ -484,6 +485,9 @@ avionics-bay,PMMA,30,near-heat`;
   exportCsvBtn.addEventListener('click', () => {
     downloadText('flame-in-freefall-cad-report.csv', reportToCsv(lastResults), 'text/csv');
   });
+  exportBomBtn.addEventListener('click', () => {
+    downloadText('flame-in-freefall.bom.json', sampleBomJson(lastCheckedBom), 'application/json');
+  });
 
   defaultSample();
   renderUnknowns();
@@ -514,14 +518,7 @@ avionics-bay,PMMA,30,near-heat`;
       lastGltfText = opts?.gltfText;
       lastGlbBuffer = opts?.glbBuffer;
       input.value = JSON.stringify(imported.parts, null, 2);
-      renderIssues(imported.issues);
       applyImportAdjacency(imported);
-      showPartsPreview(imported.parts, {
-        format: imported.format,
-        fileName,
-        gltfText: lastGltfText,
-        glbBuffer: lastGlbBuffer,
-      });
     },
     setAdjacency: (text: string) => {
       adjInput.value = text;
