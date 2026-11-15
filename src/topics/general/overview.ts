@@ -21,12 +21,12 @@ export const OVERVIEW_SECTIONS: OverviewSection[] = [
 <p><strong>How to use it</strong></p>
 <ol class="purpose-steps">
   <li>Open <strong>Study Topics</strong> (menu, top left) to browse investigations and mission themes.</li>
-  <li>Pick a habitat atmosphere, then read the heuristic “best fit” and the evidence table.</li>
+  <li>Pick a habitat atmosphere, then review the top match and the evidence table.</li>
   <li>Run the <strong>CAD Checker</strong> on a sample or your own BOM to flag flammability and temperature concerns.</li>
   <li>Ask the <strong>Helpbot</strong> where to find a finding — answers stay grounded in the curated corpus.</li>
 </ol>
 <div class="purpose-ctas" role="group" aria-label="Start here">
-  <a class="cta-btn cta-primary" href="#cad-checker">Open CAD Checker</a>
+  <a class="cta-btn" href="#cad-checker">Open CAD Checker</a>
   <a class="cta-btn" href="#cabin-fire-safety">Cabin Fire Safety</a>
   <a class="cta-btn" href="#investigations">Investigations</a>
   <a class="cta-btn" href="#fuels">Fuels data</a>

@@ -88,6 +88,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
   let sortKey: SortKey = 'name';
   let sortAsc = true;
   let rankingSort: RankingSortMode = 'triage';
+  let summaryRequestId = 0;
   const isFuels = data.topicId === 'fuels';
 
   container.innerHTML = `
@@ -95,27 +96,16 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       <p class="eyebrow">Study topic</p>
       <h1>${data.title}</h1>
       <p class="lede">${data.intro}</p>
-      <p class="start-here">
-        <strong>Start here:</strong> choose an atmosphere below, read the best-fit suggestion, then scan the evidence table.
-        ${
-          data.topicId === 'cabin-fire-safety'
-            ? ' For a BOM demo, open <a href="#cad-checker">CAD Checker</a>.'
-            : data.topicId === 'viable-materials'
-              ? ' Temperature degradation for CAD materials is below the ranking.'
-              : ''
-        }
-      </p>
     </header>
-    <section class="mission-controls">
-      <p class="controls-eyebrow">1 · Atmosphere &amp; filters</p>
-      <label>Atmosphere
-        <select class="scenario-select"></select>
+    <div class="mission-controls" role="group" aria-label="Atmosphere and filters">
+      <label><span id="mission-atmosphere-label">Atmosphere</span>
+        <select class="scenario-select" aria-labelledby="mission-atmosphere-label"></select>
       </label>
       <label>Filter rows
-        <input type="search" class="row-filter" placeholder="Name, tag, investigation…" />
+        <input type="search" class="row-filter" placeholder="Name, tag, or group" />
       </label>
-      <label>Group
-        <select class="group-filter">
+      <label><span id="mission-group-label">Group</span>
+        <select class="group-filter" aria-labelledby="mission-group-label">
           <option value="all">All groups</option>
           <option value="cabin">Cabin / surrogate</option>
           <option value="materials">Materials</option>
@@ -126,51 +116,32 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
         </select>
       </label>
       <p class="scenario-notes"></p>
-    </section>
-    <section class="si-panel" aria-live="polite">
-      <div class="si-panel-head">
-        <h2>SI summary</h2>
-        <button type="button" class="btn si-refresh">Summarize for atmosphere</button>
+    </div>
+    <section class="safety-fit-panel" aria-labelledby="evidence-match-title">
+      <div class="safety-fit-head">
+        <h2 id="evidence-match-title">Top match in the evidence</h2>
+        <button type="button" class="btn si-refresh" aria-controls="si-summary">Generate SI summary</button>
       </div>
-      <p class="si-body">Optional: summarize the ranked evidence for this atmosphere. Answers stay grounded in this topic’s curated rows and citations.</p>
-    </section>
-    <section class="safety-fit-panel" aria-live="polite">
-      <p class="eyebrow">2 · Heuristic suggestion</p>
-      <h2>Best fit for safety regulations</h2>
-      <div class="safety-fit-body"></div>
-    </section>
-    <section class="ranking-panel">
-      <div class="ranking-head">
-        <h2>3 · Evidence triage ranking</h2>
-        <label class="ranking-sort-label">Sort by
-          <select class="ranking-sort">
-            <option value="triage">Overall triage</option>
-            <option value="evidence">Evidence strength</option>
-            <option value="atmosphere">Atmosphere relevance</option>
-            <option value="category">Material category</option>
-          </select>
-        </label>
-      </div>
-      <p class="ranking-disclaimer"></p>
-      <ol class="ranking-list"></ol>
+      <div class="safety-fit-body" aria-live="polite"></div>
+      <div id="si-summary" class="si-body" role="status" hidden></div>
     </section>
     <section class="fuels-data-panel">
       <header class="fuels-data-head">
-        <h2>${isFuels ? '4 · Comprehensive fuels data' : '4 · Evidence data table'}</h2>
+        <h2 id="mission-evidence-title">${isFuels ? 'Comprehensive fuels data' : 'Evidence data table'}</h2>
         <p class="fuels-data-lede">
           ${
             isFuels
-              ? 'Full curated matrix for every cabin/surrogate and propulsion-reference entry. Read flash point, autoignition, test oxygen and pressure, LOI/LOC, method notes, and sources yourself — values stay tied to their test conditions.'
-              : 'Curated evidence rows for this topic. Compare measurements against the selected atmosphere and open the cited sources.'
+              ? 'Compare cabin and propulsion entries with their published test conditions and sources.'
+              : 'Compare measurements against the selected atmosphere and open the cited sources.'
           }
         </p>
       </header>
-      <div class="table-wrap ${data.sharpPanels ? 'sharp fuels-table' : ''} comprehensive-table">
+      <div class="table-wrap comprehensive-table${isFuels ? ' fuels-table' : ''}" role="region" aria-labelledby="mission-evidence-title" tabindex="0">
         <table class="evidence-table comprehensive-fuels-table">
           <thead>
             <tr>
-              <th data-sort="group">Group</th>
-              <th data-sort="name">Name</th>
+              <th scope="col" class="col-name" data-sort="name">Name</th>
+              <th scope="col" data-sort="group">Group</th>
               <th>Evidence</th>
               <th class="col-summary">Summary</th>
               <th data-sort="flash">Flash point</th>
@@ -194,6 +165,21 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       <p class="table-footnote">Unreported or inapplicable figures appear as an em dash (—). Droplet LOI, gas-vessel LOC, and solid-material oxygen limits are not interchangeable.</p>
     </section>
     <section class="plots-host" hidden></section>
+    <section class="ranking-panel">
+      <div class="ranking-head">
+        <h2>Evidence triage ranking</h2>
+        <label class="ranking-sort-label">Sort by
+          <select class="ranking-sort">
+            <option value="triage">Overall triage</option>
+            <option value="evidence">Evidence strength</option>
+            <option value="atmosphere">Atmosphere relevance</option>
+            <option value="category">Material category</option>
+          </select>
+        </label>
+      </div>
+      <p class="ranking-disclaimer"></p>
+      <ol class="ranking-list"></ol>
+    </section>
     <section class="studies-panel">
       <h2>Linked studies</h2>
       <div class="study-grid"></div>
@@ -233,8 +219,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
           planHost.className = 'cad-plan-host';
           wrap.append(tableHost, planHost);
           // Place compilation before the evidence table for materials-first reading.
-          const ranking = container.querySelector('.ranking-panel');
-          ranking?.after(wrap);
+          container.querySelector('.fuels-data-panel')?.before(wrap);
           return { tableHost, planHost };
         })()
       : null;
@@ -291,13 +276,15 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
         <p class="safety-fit-name">${escapeHtml(fit.row.name)}</p>
         <p class="safety-fit-meta">${escapeHtml(groupLabel(fit.row.group))} · ${escapeHtml(fit.row.evidenceType)} · heuristic fit ${fit.score}</p>
         <p>${escapeHtml(fit.row.summary)}</p>
-        <p><strong>Against ${escapeHtml(scenario.label)}:</strong> ${escapeHtml(scenario.oxygenPercent + '% O₂, ' + scenario.pressurePsia + ' psia, ' + scenario.gravityLabel)}</p>
-        <p><strong>Published LOI / LOC:</strong> ${escapeHtml(fmtMetric(band))}</p>
-        <ul class="safety-fit-reasons">
-          ${fit.reasons.map((r) => `<li>${escapeHtml(r)}</li>`).join('')}
-        </ul>
-        <p class="sources-cell">${sourcesHtml(fit.row)}</p>
-        <p class="si-caveat">Suggestion only for triage against oxygen-limit style screening. Confirm specimen, flow, pressure, and program standards before design decisions. Read the full table below for every fuel and material record.</p>
+        <details class="safety-fit-detail">
+          <summary>Why this ranked first</summary>
+          <p><strong>Published LOI / LOC:</strong> ${escapeHtml(fmtMetric(band))}</p>
+          <ul class="safety-fit-reasons">
+            ${fit.reasons.map((r) => `<li>${escapeHtml(r)}</li>`).join('')}
+          </ul>
+          <p class="sources-cell">${sourcesHtml(fit.row)}</p>
+          <p class="si-caveat">Suggestion only for triage against oxygen-limit style screening. Confirm specimen, flow, pressure, and program standards before design decisions.</p>
+        </details>
       </article>
     `;
   }
@@ -316,8 +303,8 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
         const note = r.scenarioNotes[scenarioId] ?? '—';
         const investigations = r.investigationIds?.join(', ') || '—';
         return `<tr data-group="${r.group}">
-          <td>${escapeHtml(groupLabel(r.group))}</td>
-          <td class="col-name">${escapeHtml(r.name)}</td>
+          <th scope="row" class="col-name">${escapeHtml(r.name)}</th>
+          <td class="col-group">${escapeHtml(groupLabel(r.group))}</td>
           <td>${escapeHtml(r.evidenceType)}</td>
           <td class="col-summary">${escapeHtml(r.summary)}</td>
           <td>${escapeHtml(fmtMetric(r.flashPointC))}</td>
@@ -384,8 +371,18 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       .join('');
   }
 
+  const siBtn = container.querySelector<HTMLButtonElement>('.si-refresh')!;
+  const siBody = container.querySelector<HTMLElement>('.si-body')!;
+  const clearSummary = () => {
+    summaryRequestId++;
+    siBody.hidden = true;
+    siBody.replaceChildren();
+    siBtn.disabled = false;
+  };
+
   const onScenario = () => {
     scenarioId = scenarioSelect.value as ScenarioId;
+    clearSummary();
     render();
   };
   scenarioSelect.addEventListener('change', onScenario);
@@ -394,6 +391,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
   const filterInput = container.querySelector<HTMLInputElement>('.row-filter')!;
   const onFilter = () => {
     filter = filterInput.value;
+    clearSummary();
     render();
   };
   filterInput.addEventListener('input', onFilter);
@@ -402,6 +400,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
   const groupSelect = container.querySelector<HTMLSelectElement>('.group-filter')!;
   const onGroup = () => {
     groupFilter = groupSelect.value;
+    clearSummary();
     render();
   };
   groupSelect.addEventListener('change', onGroup);
@@ -430,10 +429,10 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     destroyFns.push(() => th.removeEventListener('click', handler));
   });
 
-  const siBtn = container.querySelector<HTMLButtonElement>('.si-refresh')!;
-  const siBody = container.querySelector<HTMLElement>('.si-body')!;
   const onSi = async () => {
+    const requestId = ++summaryRequestId;
     siBtn.disabled = true;
+    siBody.hidden = false;
     siBody.textContent = 'Summarizing…';
     const scenario = scenarioById(scenarioId)!;
     const rows = visibleRows();
@@ -443,7 +442,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       ...(fit
         ? [
             {
-              name: `Safety-regulation fit: ${fit.row.name}`,
+              name: `Top match in the evidence: ${fit.row.name}`,
               summary: fit.row.summary,
               reasons: fit.reasons,
               sources: fit.row.sources,
@@ -464,11 +463,14 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       scenarioNotes: scenario.notes,
       topRows,
     });
-    siBody.innerHTML = text;
-    siBtn.disabled = false;
+    if (requestId === summaryRequestId) {
+      siBody.innerHTML = text;
+      siBtn.disabled = false;
+    }
   };
   siBtn.addEventListener('click', onSi);
   destroyFns.push(() => siBtn.removeEventListener('click', onSi));
+  destroyFns.push(clearSummary);
 
   render();
 

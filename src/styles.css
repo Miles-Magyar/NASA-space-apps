@@ -418,7 +418,7 @@ img {
   border: 1px solid var(--line);
   color: var(--cream);
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.03);
+  background: #171717;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
@@ -426,11 +426,6 @@ img {
 .cta-btn:focus-visible {
   border-color: var(--accent);
   outline: none;
-}
-
-.cta-btn.cta-primary {
-  border-color: var(--accent);
-  background: rgba(217, 160, 102, 0.16);
 }
 
 .purpose-note {
@@ -449,6 +444,7 @@ img {
   pointer-events: none;
   transition: opacity 0.6s ease;
   z-index: 5;
+  mix-blend-mode: lighten;
 }
 
 .sun-panel.is-visible {
@@ -609,7 +605,6 @@ img {
   color: var(--cream-faint);
 }
 
-.si-panel,
 .mission-controls,
 .ranking-panel,
 .safety-fit-panel,
@@ -624,7 +619,6 @@ img {
   margin: 1.25rem 0;
 }
 
-.fuels-theme .si-panel,
 .fuels-theme .mission-controls,
 .fuels-theme .ranking-panel,
 .fuels-theme .safety-fit-panel,
@@ -639,15 +633,16 @@ img {
 }
 
 .safety-fit-panel {
-  border-left: 3px solid var(--ok);
+  margin-top: .65rem;
 }
 
-.safety-fit-panel .eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.72rem;
-  color: var(--cream-dim);
-  margin: 0 0 0.35rem;
+.safety-fit-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .5rem 1rem;
+  margin-bottom: .8rem;
 }
 
 .safety-fit-panel h2,
@@ -655,6 +650,22 @@ img {
   font-family: var(--font-display);
   font-weight: 400;
   margin: 0 0 0.65rem;
+}
+
+.safety-fit-head h2 {
+  margin: 0;
+}
+
+.safety-fit-detail summary {
+  cursor: pointer;
+  color: var(--cream-dim);
+  font-size: .92rem;
+}
+
+.si-body:not([hidden]) {
+  border-top: 1px solid var(--line);
+  margin-top: 1rem;
+  padding-top: .75rem;
 }
 
 .safety-fit-name {
@@ -717,16 +728,15 @@ img {
   line-height: 1.4;
 }
 
-.comprehensive-fuels-table tr[data-group='propulsion'] td:first-child {
+.comprehensive-fuels-table tr[data-group='propulsion'] .col-group {
   color: var(--cream-dim);
 }
 
-.comprehensive-fuels-table tr[data-group='cabin'] td:first-child,
-.comprehensive-fuels-table tr[data-group='materials'] td:first-child {
+.comprehensive-fuels-table tr[data-group='cabin'] .col-group,
+.comprehensive-fuels-table tr[data-group='materials'] .col-group {
   color: var(--cool);
 }
 
-.si-panel-head,
 .cad-actions,
 .mission-controls {
   display: flex;
@@ -735,7 +745,6 @@ img {
   align-items: end;
 }
 
-.si-panel h2,
 .ranking-panel h2,
 .studies-panel h2,
 .records-panel h2,
@@ -767,6 +776,21 @@ img {
   gap: 0.3rem;
   font-size: 0.9rem;
   color: var(--cream-dim);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.mission-controls {
+  margin-bottom: .65rem;
+}
+
+.mission-controls .scenario-notes {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.mission-controls :is(select, input) {
+  max-width: 100%;
 }
 
 .mission-controls select,
@@ -869,6 +893,25 @@ img {
 .fuels-theme .evidence-table th,
 .fuels-theme .evidence-table td {
   background: #2f2f2f;
+}
+
+@media (max-width: 700px) {
+  .fuels-table .col-name {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 7rem;
+    width: 8rem;
+    max-width: 8rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    box-shadow: 1px 0 #505050;
+  }
+
+  .fuels-table thead .col-name {
+    z-index: 3;
+    box-shadow: 1px 0 #505050, 0 1px 0 var(--line);
+  }
 }
 
 .evidence-table th[data-sort] {
@@ -981,6 +1024,10 @@ img {
 
 .investigations-catalog {
   margin-top: 0.5rem;
+}
+
+.catalog-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, max(17rem, (100% - 2rem) / 3)), 1fr));
 }
 
 .catalog-card h2 {
@@ -1106,28 +1153,6 @@ img {
 .schema-note {
   font-size: 0.92rem;
   color: var(--cream-faint);
-}
-
-.start-here {
-  margin: 0.85rem 0 0;
-  max-width: 42rem;
-  color: var(--cream-faint);
-  padding: 0.65rem 0.75rem;
-  border-left: 2px solid var(--accent);
-  background: rgba(217, 160, 102, 0.08);
-}
-
-.start-here a {
-  color: var(--accent);
-}
-
-.controls-eyebrow {
-  grid-column: 1 / -1;
-  margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent);
 }
 
 .cad-demo-grid {
