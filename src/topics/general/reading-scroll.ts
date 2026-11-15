@@ -17,6 +17,7 @@ export function initReadingScroll(
   const sun = root.querySelector<HTMLElement>('.sun-panel');
   const chrome = document.querySelector<HTMLElement>('.app-chrome');
   const stops = [intro, ...sections].filter(Boolean) as HTMLElement[];
+  const mobileLayout = window.matchMedia('(max-width: 900px)');
 
   let active = 0;
   let settling = false;
@@ -40,6 +41,10 @@ export function initReadingScroll(
   function jumpTo(index: number) {
     const el = stops[index];
     if (!el) return;
+    if (mobileLayout.matches) {
+      el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+      return;
+    }
     settling = true;
     setActive(index);
     el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
@@ -67,7 +72,7 @@ export function initReadingScroll(
   }
 
   function onWheel(e: WheelEvent) {
-    if (prefersReducedMotion() || settling) return;
+    if (mobileLayout.matches || prefersReducedMotion() || settling) return;
     const target = e.target as HTMLElement | null;
     if (target?.closest('.helpbot, .sidebar, .search-results, .cad-checker')) return;
     const current = stops[active];

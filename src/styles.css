@@ -461,11 +461,22 @@ img {
 }
 
 @media (max-width: 900px) {
+  .general-intro {
+    min-height: 100svh;
+  }
+
+  .general-intro :is(.challenge-label, .hero-title, .hero-sub) {
+    opacity: 1;
+    transform: none;
+  }
+
   .sun-panel {
     position: static;
-    width: min(70vw, 280px);
+    width: min(78vw, 19.5rem);
     margin: 0 auto 1rem;
-    transform: scale(1.12);
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
   .sun-panel img {
     max-height: none;
