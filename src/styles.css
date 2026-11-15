@@ -539,6 +539,40 @@ img {
   color: var(--cream-faint);
 }
 
+.research-visual {
+  display: grid;
+  gap: .5rem;
+  margin: 1rem 0;
+}
+
+.research-visual img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 13rem;
+}
+
+.research-visual figcaption {
+  font-size: .85rem;
+  line-height: 1.45;
+  color: var(--cream-faint);
+}
+
+.research-visual figcaption a {
+  white-space: nowrap;
+}
+
+@media (min-width: 901px) and (max-height: 820px) {
+  .reading-section:has(.research-visual) {
+    padding-block: 4rem;
+  }
+
+  .reading-section .research-visual img {
+    max-height: 10rem;
+  }
+}
+
 .feature-card {
   background: transparent;
   border: none;

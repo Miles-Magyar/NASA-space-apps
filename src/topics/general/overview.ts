@@ -1,3 +1,5 @@
+import { RESEARCH_VISUALS, renderResearchVisual } from '../research-visuals';
+
 export interface OverviewSection {
   id: string;
   heading: string;
@@ -48,6 +50,7 @@ export const OVERVIEW_SECTIONS: OverviewSection[] = [
     shortTitle: 'Freefall',
     paragraphs: [],
     html: `<p>In microgravity a candle flame becomes a quiet blue sphere. Oxygen reaches the reaction zone by diffusion; soot may linger inside the flame instead of streaming into a buoyant plume. Extinguishment can look different too — <strong>radiative</strong> and <strong>diffusive</strong> extinction pathways appear in droplet tests such as <a href="#investigations" data-study="flex"><strong>FLEX</strong></a>.</p>
+${renderResearchVisual(RESEARCH_VISUALS.candleComparison)}
 <p>That shift rewrites fire safety assumptions. Smoke may not race to the ceiling. Materials that barely burn in air on Earth can sustain flames when oxygen rises for lunar habitats or when flow supplies oxidizer in a duct. Spacesuits push the extreme: about <strong>100% O₂ at 4.3 psi</strong>.</p>`,
   },
   {
@@ -56,6 +59,7 @@ export const OVERVIEW_SECTIONS: OverviewSection[] = [
     shortTitle: 'Orbit lab',
     paragraphs: [],
     html: `<p>The ISS hosts dedicated combustion facilities: the <a href="https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/science-facilities-on-the-iss/fluids-combustion-facility/" target="_blank" rel="noopener"><strong>Combustion Integrated Rack (CIR)</strong></a> and the Microgravity Science Glovebox. Campaigns include droplet extinguishment (<a href="#investigations" data-study="flex"><strong>FLEX</strong></a>), solid burning and suppression (<a href="#investigations" data-study="bass"><strong>BASS</strong></a>, <a href="#investigations" data-study="sofie"><strong>SoFIE</strong></a>), large-scale spread on Cygnus (<a href="#investigations" data-study="saffire"><strong>Saffire</strong></a>), smoke characterization (<a href="#investigations" data-study="same"><strong>SAME</strong></a>), soot and lifted gas flames (<a href="#investigations" data-study="spice"><strong>SPICE</strong></a>, <a href="#investigations" data-study="slice"><strong>SLICE</strong></a>), and the <a href="#investigations" data-study="acme"><strong>ACME</strong></a> gas-flame suite.</p>
+${renderResearchVisual(RESEARCH_VISUALS.combustionLab)}
 <p>Browse first-class cards for each campaign in the <a href="#investigations"><strong>Investigations</strong></a> catalog. Results are archived in NASA’s <a href="https://psi.nasa.gov/" target="_blank" rel="noopener">Physical Sciences Informatics (PSI)</a> repository — powerful, but hard to compare across oxygen, pressure, flow, and geometry without a curated layer.</p>`,
   },
   {
@@ -64,6 +68,7 @@ export const OVERVIEW_SECTIONS: OverviewSection[] = [
     shortTitle: 'Mission safety',
     paragraphs: [],
     html: `<p>Exploration atmospheres trade EVA pre-breathe time against flammability: lunar habitat references near <strong>34% O₂ and 8.2 psia</strong> sit between ISS air and EMU pure oxygen. Partial-gravity combustion data remain sparse in PSI — programs like <a href="#investigations" data-study="fm2"><strong>FM2</strong></a> aim to close that gap.</p>
+${renderResearchVisual(RESEARCH_VISUALS.lunarGravity)}
 <p>This dashboard ranks sourced evidence for the atmosphere you select, summarizes it with SI grounded in the curated corpus, and checks build materials against flash/autoignition and oxygen limits. Start with <a href="#cabin-fire-safety"><strong>Cabin Fire Safety</strong></a> for the end-to-end path, try the <a href="#cad-checker"><strong>CAD Checker</strong></a> demo on sample BOMs, or open <a href="#fuels"><strong>Fuels</strong></a> for the full measurement matrix.</p>`,
   },
   {

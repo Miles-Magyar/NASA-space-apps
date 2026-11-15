@@ -1,5 +1,12 @@
 import { INVESTIGATIONS } from '../evidence/registry';
 import type { StudyCard } from '../mission-types';
+import { RESEARCH_VISUALS, renderResearchVisual, type ResearchVisual } from '../research-visuals';
+
+const CATALOG_VISUALS: Partial<Record<string, ResearchVisual>> = {
+  acme: RESEARCH_VISUALS.combustionLab,
+  fm2: RESEARCH_VISUALS.lunarGravity,
+  saffire: RESEARCH_VISUALS.saffire,
+};
 
 /** Stable display order for the Investigations catalog. */
 export const CATALOG_ORDER = [
@@ -33,9 +40,12 @@ export function renderInvestigationsCatalog(container: HTMLElement): void {
       <div class="study-grid catalog-grid">
         ${cards
           .map(
-            (s) => `<article class="study-card catalog-card" id="study-${s.id}">
+            (s) => {
+              const visual = CATALOG_VISUALS[s.id];
+              return `<article class="study-card catalog-card" id="study-${s.id}">
               <h2>${s.title}</h2>
               <p class="study-facility">${s.facility ?? s.investigation}</p>
+              ${visual ? renderResearchVisual(visual) : ''}
               <p><strong>What was measured:</strong> ${s.summary}</p>
               <p><strong>Key finding:</strong> ${s.keyFinding}</p>
               ${s.openQuestion ? `<p><strong>Open question:</strong> ${s.openQuestion}</p>` : ''}
@@ -43,7 +53,8 @@ export function renderInvestigationsCatalog(container: HTMLElement): void {
               <p class="sources-cell">${s.sources
                 .map((x) => `<a href="${x.url}" target="_blank" rel="noopener">${x.label}</a>`)
                 .join(' · ')}</p>
-            </article>`,
+            </article>`;
+            },
           )
           .join('')}
       </div>
