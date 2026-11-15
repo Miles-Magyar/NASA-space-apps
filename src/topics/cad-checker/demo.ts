@@ -23,7 +23,7 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
         <p class="lede">
           Load a guided demo or your own build/CAD file, pick an atmosphere, and get cited
           pass / review / high-concern / unknown flags from the NASA materials library.
-          DXF parts import live; DWG / SOLIDWORKS / Inventor / CATIA / NX·Creo are detected with an export path.
+          DXF / STEP / glTF·GLB import with part preview; DWG and proprietary CAD use convert or export paths.
         </p>
       </header>
 
@@ -34,7 +34,17 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
           ${ALL_DEMO_SCENARIOS.map(
             (d) => `
             <button type="button" class="cad-demo-card" data-demo="${d.id}">
-              <span class="cad-demo-card-kicker">${d.nativeCad ? 'DXF' : d.atmosphereId.toUpperCase()}</span>
+              <span class="cad-demo-card-kicker">${
+                d.nativeCadUrl?.fileName.toLowerCase().endsWith('.gltf') ||
+                d.nativeCadUrl?.fileName.toLowerCase().endsWith('.glb')
+                  ? 'GLTF'
+                  : d.nativeCad?.fileName.toLowerCase().endsWith('.step') ||
+                      d.nativeCad?.fileName.toLowerCase().endsWith('.stp')
+                    ? 'STEP'
+                    : d.nativeCad
+                      ? 'DXF'
+                      : d.atmosphereId.toUpperCase()
+              }</span>
               <strong>${d.title}</strong>
               <span>${d.blurb}</span>
             </button>`,
@@ -63,10 +73,9 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
       <details class="cad-demo-advanced">
         <summary>Formats, samples &amp; analysis plan</summary>
         <p class="schema-note">
-          Accepted types: <code>${formats}</code>. Binary <code>.glb</code> unsupported.
-          Native CAD: <strong>DXF</strong> + <strong>STEP</strong> + <strong>glTF mesh preview</strong>. <strong>DWG→DXF</strong> via fixture/<code>/api/cad-convert</code> (optional upstream worker). SLDPRT / IPT / CATPART / PRT / … → STEP/BOM export guidance.
-          Schema: <code>id</code>, <code>material</code>, <code>mass</code>, <code>area</code>,
-          <code>nearbyFuel</code>, <code>maxExpectedTempC</code>, <code>zone</code>, <code>heaterId</code>.
+          Accepted types: <code>${formats}</code>.
+          Native CAD: <strong>DXF</strong> + <strong>STEP</strong> + <strong>glTF/GLB mesh preview</strong>. <strong>DWG→DXF</strong> via fixture/<code>/api/cad-convert</code> (optional upstream worker). SLDPRT / IPT / CATPART / PRT / … → STEP/BOM export guidance.
+          Flame BOM schema: <code>id</code>, <code>material</code>, <code>parentId</code>, <code>zone</code>, <code>heaterId</code>, <code>maxExpectedTempC</code>, …
         </p>
         <p class="cad-demo-links">
           <a href="#viable-materials">Materials temperature table</a>
@@ -79,9 +88,11 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
           ·
           <a href="/samples/sample-habitat-cover.dxf" download>Sample DXF</a>
           ·
-          <a href="/samples/sample-habitat-panel.gltf" download>Sample glTF mesh</a>
+          <a href="/samples/sample-habitat-panel.gltf" download>Sample glTF</a>
+          ·
+          <a href="/samples/sample-habitat-panel.glb" download>Sample GLB</a>
         </p>
-        <p class="muted">See <code>docs/CAD_NATIVE_PARTS_PLAN.md</code> for the phased SolidWorks / Inventor / CATIA / NX plan.</p>
+        <p class="muted">See <code>docs/CAD_NATIVE_PARTS_PLAN.md</code> and <code>docs/FLAME_BOM_EXPORT.md</code> for CAD export guidance.</p>
       </details>
     </article>
   `;

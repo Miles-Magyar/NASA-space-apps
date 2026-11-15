@@ -10,6 +10,7 @@ export type BuildFileFormat =
   | 'tsv'
   | 'xml'
   | 'gltf'
+  | 'glb'
   | 'step'
   | 'unknown';
 
@@ -22,16 +23,18 @@ export const ACCEPTED_BUILD_EXTENSIONS = [
   '.txt',
   '.xml',
   '.gltf',
+  '.glb',
   '.step',
   '.stp',
 ] as const;
 
 export const ACCEPTED_BUILD_ACCEPT =
-  '.json,.ndjson,.jsonl,.csv,.tsv,.txt,.xml,.gltf,.step,.stp,application/json,text/csv,text/tab-separated-values,text/plain,model/gltf+json,application/xml,text/xml';
+  '.json,.ndjson,.jsonl,.csv,.tsv,.txt,.xml,.gltf,.glb,.step,.stp,application/json,text/csv,text/tab-separated-values,text/plain,model/gltf+json,model/gltf-binary,application/xml,text/xml';
 
 function detectFormat(text: string, fileName?: string): BuildFileFormat {
   const name = (fileName ?? '').toLowerCase();
   if (name.endsWith('.gltf')) return 'gltf';
+  if (name.endsWith('.glb')) return 'glb';
   if (name.endsWith('.step') || name.endsWith('.stp')) return 'step';
   if (name.endsWith('.ndjson') || name.endsWith('.jsonl')) return 'ndjson';
   if (name.endsWith('.csv')) return 'csv';
@@ -324,19 +327,6 @@ function parseStepMaterials(
 export function parseBuildFile(text: string, fileName?: string): ParseBomResult {
   const issues: ParseIssue[] = [];
   const format = detectFormat(text, fileName);
-
-  if (fileName?.toLowerCase().endsWith('.glb')) {
-    return {
-      format: 'unknown',
-      parts: [],
-      issues: [
-        {
-          severity: 'error',
-          message: 'Binary .glb is not supported yet — export .gltf JSON or a materials-tagged BOM (CSV/JSON).',
-        },
-      ],
-    };
-  }
 
   let parts: BomPart[] = [];
   let adjacency: ParseBomResult['adjacency'];

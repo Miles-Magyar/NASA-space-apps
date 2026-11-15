@@ -1220,11 +1220,35 @@ img {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-.cad-import-preview {
-  margin: 1rem 0;
-  padding: 0.85rem 1rem;
+.cad-flow {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  color: var(--cream-faint);
+  max-width: 40rem;
+}
+
+.cad-flow li {
+  margin: 0.2rem 0;
+}
+
+.cad-panel {
+  margin: 1rem 0 1.25rem;
+  padding: 0.9rem 1rem 1rem;
   border: 1px solid var(--line);
-  background: rgba(12, 12, 12, 0.88);
+  background: rgba(10, 10, 10, 0.72);
+}
+
+.cad-panel-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  margin: 0 0 0.65rem;
+}
+
+.cad-import-preview {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
 }
 
 .cad-import-preview h3 {

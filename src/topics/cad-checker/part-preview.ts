@@ -9,6 +9,8 @@ export interface PartPreviewOptions {
   parts: BomPart[];
   /** Raw glTF JSON text when the upload was .gltf with possible meshes. */
   gltfText?: string;
+  /** Binary GLB buffer for mesh preview. */
+  glbBuffer?: ArrayBuffer;
   fileName?: string;
 }
 
@@ -133,9 +135,15 @@ export async function mountPartPreview(
   };
 
   try {
-    if (options.gltfText && looksLikeGltfWithMesh(options.gltfText)) {
-      const loader = new GLTFLoader();
-      const gltf = await loader.parseAsync(options.gltfText!, '');
+    const loader = new GLTFLoader();
+    if (options.glbBuffer) {
+      const gltf = await loader.parseAsync(options.glbBuffer, '');
+      root = gltf.scene;
+      scene.add(gltf.scene);
+      fitCamera(gltf.scene);
+      hint.textContent = 'GLB mesh preview — materials drive the flammability table below.';
+    } else if (options.gltfText && looksLikeGltfWithMesh(options.gltfText)) {
+      const gltf = await loader.parseAsync(options.gltfText, '');
       root = gltf.scene;
       scene.add(gltf.scene);
       fitCamera(gltf.scene);
