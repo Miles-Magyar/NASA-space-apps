@@ -7,3 +7,4 @@ dist/
 .env.*
 !.env.example
 test-results/
+.ui-worktree/

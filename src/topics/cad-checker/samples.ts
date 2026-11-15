@@ -1,5 +1,6 @@
 import type { BomPart } from './types';
 import { SAMPLE_HABITAT_COVER_DXF } from './sample-dxf';
+import { SAMPLE_SW_HABITAT_ASSY_STEP } from './sample-step';
 
 export interface DemoScenario {
   id: string;
@@ -119,6 +120,21 @@ export const NATIVE_CAD_DEMO_SCENARIOS: DemoScenario[] = [
     nativeCad: { fileName: 'sample-habitat-cover.dxf', text: SAMPLE_HABITAT_COVER_DXF },
     adjacencyCsv: `partA,partB,clearanceMm,relation
 Aluminum,PMMA,30,near-heat`,
+  },
+  {
+    id: 'step-sw-habitat-assy',
+    title: 'STEP assembly (SolidWorks→STEP hub)',
+    blurb:
+      'Phase 2 interchange: PRODUCT + NEXT_ASSEMBLY_USAGE_OCCURRENCE tree → parts with parentId and inferred near-heat adjacency. No download.',
+    atmosphereId: 'lunar',
+    whatToNotice: [
+      'STEP PRODUCT nodes become BomPart rows with stable ids',
+      'NAUO parent/child links fill parentId and adjacency CSV automatically',
+      'PMMA near Avionics_Heater flags under lunar 34% O₂',
+      'Prefer this STEP (or Flame BOM JSON) path over proprietary .sldasm in-browser',
+    ],
+    parts: [],
+    nativeCad: { fileName: 'sample-sw-habitat-assy.step', text: SAMPLE_SW_HABITAT_ASSY_STEP },
   },
 ];
 
