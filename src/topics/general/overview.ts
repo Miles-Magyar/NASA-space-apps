@@ -8,6 +8,26 @@ export interface OverviewSection {
 
 export const OVERVIEW_SECTIONS: OverviewSection[] = [
   {
+    id: 'purpose',
+    heading: 'What this project is for',
+    paragraphs: [],
+    html: `<p class="purpose-lede">Flame in Freefall turns NASA microgravity combustion evidence into atmosphere-aware fire-safety guidance for habitats, suits, vehicles, and build materials — with citations you can open, not a black-box risk score.</p>
+<p><strong>How to use it</strong></p>
+<ol class="purpose-steps">
+  <li>Open <strong>Study Topics</strong> (menu, top left) to browse investigations and mission themes.</li>
+  <li>Pick a habitat atmosphere, then read the heuristic “best fit” and the evidence table.</li>
+  <li>Run the <strong>CAD Checker</strong> on a sample or your own BOM to flag flammability and temperature concerns.</li>
+  <li>Ask the <strong>Helpbot</strong> where to find a finding — answers stay grounded in the curated corpus.</li>
+</ol>
+<div class="purpose-ctas" role="group" aria-label="Start here">
+  <a class="cta-btn cta-primary" href="#cad-checker">Open CAD Checker</a>
+  <a class="cta-btn" href="#cabin-fire-safety">Cabin Fire Safety</a>
+  <a class="cta-btn" href="#investigations">Investigations</a>
+  <a class="cta-btn" href="#fuels">Fuels data</a>
+</div>
+<p class="purpose-note">Scroll onward for the freefall story — Earth flames, orbital labs, and Moon/Mars transfer — or jump straight into a topic above.</p>`,
+  },
+  {
     id: 'baseline',
     heading: 'The baseline rules of combustion',
     paragraphs: [
