@@ -16,7 +16,7 @@ export const PROPRIETARY_CAD_SPECS: ProprietarySpec[] = [
     extensions: ['.dwg'],
     preferredExports: ['.dxf', '.step', '.stp', '.json'],
     recommend:
-      'DWG is a proprietary binary. Export ASCII DXF (or STEP/BOM JSON) from AutoCAD, or use the planned DWG→DXF conversion worker.',
+      'DWG is a proprietary binary. Prefer ASCII DXF export, or POST to /api/cad-convert (fixture unwrap in CI; set CAD_CONVERT_UPSTREAM for real ODA/LibreDWG).',
   },
   {
     format: 'sldprt',
@@ -117,7 +117,7 @@ export function importProprietary(
   if (format === 'dwg' && buffer && looksLikeDwg(buffer)) {
     issues.push({
       severity: 'warning',
-      message: 'DWG signature (AC10xx) detected. Phase 1 will convert DWG→DXF server-side; today export DXF manually.',
+      message: 'DWG signature (AC10xx) detected. Use /api/cad-convert (or a Flame *.fixture.dwg) for DXF round-trip; otherwise export DXF manually.',
     });
   }
 

@@ -1,7 +1,23 @@
 import { importDxf } from './dxf';
 import { importProprietary, PROPRIETARY_CAD_SPECS, looksLikeDwg } from './proprietary';
+import { requestCadConvert } from './convert-client';
 import type { CadImportResult, CadNativeFormat } from './types';
 import { parseBuildFile } from '../parse-bom';
+
+/** Mirrors api/lib/cad-convert-core fixture marker — client unwrap so local vite works without serverless. */
+const FIXTURE_MARKER = 'FLAME_DXF_V1\n';
+
+function unwrapFixtureDwgClient(buffer: ArrayBuffer): string | null {
+  const bytes = new Uint8Array(buffer);
+  if (bytes.length < 6) return null;
+  const head = String.fromCharCode(bytes[0]!, bytes[1]!, bytes[2]!, bytes[3]!, bytes[4]!, bytes[5]!);
+  if (!/^AC10\d\d/.test(head)) return null;
+  const text = new TextDecoder().decode(bytes);
+  const idx = text.indexOf(FIXTURE_MARKER);
+  if (idx < 0) return null;
+  const dxf = text.slice(idx + FIXTURE_MARKER.length);
+  return /^\s*0\s*\r?\nSECTION/im.test(dxf) ? dxf : null;
+}
 
 const EXT_TO_FORMAT: Record<string, CadNativeFormat> = {};
 for (const spec of PROPRIETARY_CAD_SPECS) {
@@ -33,7 +49,8 @@ export function isNativeCadFileName(fileName: string): boolean {
 
 /**
  * Import a browser File (BOM text formats still go through parseBuildFile).
- * Native CAD: DXF parsed; proprietary formats return conversion guidance + stem candidate.
+ * Native CAD: DXF parsed; DWG tries /api/cad-convert then falls back to guidance;
+ * other proprietary formats return conversion guidance + stem candidate.
  */
 export async function importCadUpload(file: File): Promise<CadImportResult> {
   const name = file.name;
@@ -42,6 +59,45 @@ export async function importCadUpload(file: File): Promise<CadImportResult> {
   if (format === 'dxf') {
     const text = await file.text();
     return importDxf(text, name);
+  }
+
+  if (format === 'dwg') {
+    const buffer = await file.arrayBuffer();
+
+    // Client-side Flame fixture unwrap (no server required for CI/demo samples)
+    const fixtureDxf = unwrapFixtureDwgClient(buffer);
+    if (fixtureDxf) {
+      const imported = importDxf(fixtureDxf, name.replace(/\.dwg$/i, '.dxf'));
+      imported.issues.unshift({
+        severity: 'warning',
+        message: `Converted ${name} → DXF via fixture unwrap (Phase 1 CI path).`,
+      });
+      return imported;
+    }
+
+    const converted = await requestCadConvert(name, buffer);
+    if (converted?.ok) {
+      const imported = importDxf(converted.dxf, converted.fileName);
+      imported.issues.unshift({
+        severity: 'warning',
+        message: `Converted ${name} → DXF via ${converted.converter} converter.`,
+      });
+      return imported;
+    }
+    const fallback = importProprietary('dwg', name, buffer);
+    if (converted && !converted.ok) {
+      fallback.issues.unshift({
+        severity: 'warning',
+        message: `Server convert: ${converted.error}${converted.recommend ? ` — ${converted.recommend}` : ''}`,
+      });
+    } else if (!converted) {
+      fallback.issues.unshift({
+        severity: 'warning',
+        message:
+          'CAD convert API unreachable for real DWG. Export ASCII DXF, deploy /api/cad-convert, or set CAD_CONVERT_UPSTREAM.',
+      });
+    }
+    return fallback;
   }
 
   if (format) {

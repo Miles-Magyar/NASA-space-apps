@@ -48,3 +48,18 @@ describe('proprietary stubs', () => {
     expect(r.parts[0]?.material.toLowerCase()).toContain('acrylic');
   });
 });
+
+describe('Phase 1 DWG fixture unwrap', () => {
+  it('importCadUpload unwraps fixture DWG without a server', async () => {
+    const { wrapDxfAsFixtureDwg } = await import('../../../../api/lib/cad-convert-core');
+    const { importCadUpload } = await import('../importers/registry');
+    const bytes = wrapDxfAsFixtureDwg(SAMPLE_HABITAT_COVER_DXF);
+    const file = new File([new Blob([new Uint8Array(bytes)])], 'sample-habitat-cover.fixture.dwg', {
+      type: 'application/octet-stream',
+    });
+    const r = await importCadUpload(file);
+    expect(r.nativeCad).toBe(true);
+    expect(r.format).toBe('dxf');
+    expect(r.parts.some((p) => /pmma/i.test(p.material))).toBe(true);
+  });
+});

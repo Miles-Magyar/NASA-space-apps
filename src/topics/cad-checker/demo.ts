@@ -64,7 +64,7 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
         <summary>Formats, samples &amp; analysis plan</summary>
         <p class="schema-note">
           Accepted types: <code>${formats}</code>. Binary <code>.glb</code> unsupported.
-          Native CAD: <strong>DXF parsed</strong>; DWG / SLDPRT / SLDASM / IPT / IAM / CATPART / CATPRODUCT / PRT / ASM detected with STEP/DXF/BOM export guidance.
+          Native CAD: <strong>DXF parsed</strong>; <strong>DWG→DXF</strong> via fixture unwrap or <code>/api/cad-convert</code> (set <code>CAD_CONVERT_UPSTREAM</code> for real DWG). SLDPRT / IPT / CATPART / PRT / … detected with STEP/BOM export guidance.
           Schema: <code>id</code>, <code>material</code>, <code>mass</code>, <code>area</code>,
           <code>nearbyFuel</code>, <code>maxExpectedTempC</code>, <code>zone</code>, <code>heaterId</code>.
         </p>

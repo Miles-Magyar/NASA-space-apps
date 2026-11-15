@@ -41,7 +41,7 @@ Static-only hosting (e.g. Porkbun): upload the contents of `dist/`. Hash routes 
 
 General · **Investigations** · Cabin Fire Safety · Viable Materials · Fuels · Spacesuits · Spacecraft · Engines · Fuel Storage · Rovers
 
-**CAD Checker** (`#cad-checker`) is a dedicated application tab with guided demos and multi-format build intake (`JSON`, `CSV`, `TSV`, `NDJSON`, `XML`, `glTF`, `STEP`), native CAD intake (live **DXF** material/layer extract; detect + export guidance for **DWG**, SOLIDWORKS, Inventor, CATIA, NX/Creo), heater presets, adjacency flags, and cited report export. See `docs/CAD_NATIVE_PARTS_PLAN.md` and `docs/CAD_FIRE_VULNERABILITY_PLAN.md`. **Viable Materials** hosts the temperature-degradation compilation and analysis plan.
+**CAD Checker** (`#cad-checker`) is a dedicated application tab with guided demos and multi-format build intake (`JSON`, `CSV`, `TSV`, `NDJSON`, `XML`, `glTF`, `STEP`), native CAD intake (live **DXF**; **DWG→DXF** via fixture unwrap or `POST /api/cad-convert` with optional `CAD_CONVERT_UPSTREAM`; detect + export guidance for SOLIDWORKS, Inventor, CATIA, NX/Creo), heater presets, adjacency flags, and cited report export. See `docs/CAD_NATIVE_PARTS_PLAN.md` and `docs/CAD_FIRE_VULNERABILITY_PLAN.md`. **Viable Materials** hosts the temperature-degradation compilation and analysis plan.
 
 ```bash
 npm test    # Vitest: parse + checkBom + adjacency
