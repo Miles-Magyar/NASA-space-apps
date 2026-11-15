@@ -51,7 +51,6 @@ export function adjacencyFromParentHints(parts: BomPart[]): AdjacencyEdge[] {
       edges.push({
         partA: parent.id,
         partB: p.id,
-        clearanceMm: heat ? 30 : 50,
         relation: heat ? 'near-heat' : 'same-bay',
       });
     }
@@ -65,7 +64,6 @@ export function adjacencyFromParentHints(parts: BomPart[]): AdjacencyEdge[] {
       edges.push({
         partA: heat.id,
         partB: s.id,
-        clearanceMm: 30,
         relation: 'near-heat',
       });
     }
@@ -193,14 +191,12 @@ export function parseStepAssembly(text: string, fileName = 'assembly.step'): Ste
       if (usedIds.has(id)) id = `${id}-${node.entityId}`;
       usedIds.add(id);
       const parentId = parentByChildId.get(node.id) ?? parentByChildId.get(id);
-      const heat = looksLikeHeatName(node.name);
       const part = normalizePart(
         {
           id,
           material: node.name.replace(/^MATERIAL[_-]/i, ''),
           zone: 'cabin',
           parentId,
-          heaterId: heat ? 'avionics-bay' : undefined,
         },
         ++i,
         issues,
@@ -238,7 +234,7 @@ export function parseStepAssembly(text: string, fileName = 'assembly.step'): Ste
   } else {
     issues.push({
       severity: 'warning',
-      message: `STEP assembly import (${fileName}): best-effort PRODUCT/NAUO tree — not a geometry kernel. ${adjacency.length} adjacency edge(s) inferred from parent hints.`,
+      message: `STEP assembly import (${fileName}) extracted ${adjacency.length} relationship hint(s) from the part tree. Review them and provide measured clearances or temperatures where available.`,
     });
   }
 

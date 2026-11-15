@@ -19,6 +19,10 @@ Each part object:
 
 Machine-readable copy: `schemas/flame-bom.schema.json`.
 
+## Export from CAD Checker
+
+Import a STEP assembly, tagged drawing, glTF/GLB, or BOM. After a successful check, choose **Download Flame BOM JSON** to save the normalized input part list. The export preserves part IDs, parent IDs, and explicit material and thermal fields. The separate results downloads contain screening flags and citations. To reproduce a check, select the same atmosphere and reapply any custom adjacency file or session-wide heater preset.
+
 ## Vendor export recipes (manual today)
 
 1. **SOLIDWORKS** — Save As STEP *or* export BOM table → CSV, then map columns to Flame JSON (see sample `public/samples/sample-sw-habitat-assy.bom.json`).

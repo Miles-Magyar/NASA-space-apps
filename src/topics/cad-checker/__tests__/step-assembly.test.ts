@@ -20,6 +20,8 @@ describe('STEP assembly Phase 2', () => {
     expect(pmma?.parentId).toBeTruthy();
     expect(r.adjacency.length).toBeGreaterThan(0);
     expect(r.adjacency.some((e) => e.relation === 'near-heat')).toBe(true);
+    expect(r.adjacency.every((edge) => edge.clearanceMm === undefined)).toBe(true);
+    expect(r.parts.every((part) => part.heaterId === undefined && part.maxExpectedTempC === undefined)).toBe(true);
   });
 
   it('importStepAssembly marks nativeCad and feeds checkBom', () => {

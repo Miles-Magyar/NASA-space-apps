@@ -1516,6 +1516,26 @@ img {
   display: block;
   width: 100%;
   height: auto;
+  cursor: grab;
+}
+
+.cad-mesh-canvas:active {
+  cursor: grabbing;
+}
+
+.cad-mesh-canvas:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.cad-mesh-controls:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem .8rem;
+  align-items: center;
+  margin-top: .55rem;
+  color: var(--cream-dim);
+  font-size: .82rem;
 }
 
 .cad-mesh-hint {

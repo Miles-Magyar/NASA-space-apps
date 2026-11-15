@@ -11,6 +11,8 @@
 import {
   CAD_CONVERT_MAX_BYTES,
   convertLocally,
+  looksLikeAsciiDxf,
+  replaceExtension,
   type ConvertResult,
 } from './lib/cad-convert-core.js';
 import { checkRateLimit } from './lib/rate-limit.js';
@@ -41,44 +43,42 @@ async function convertViaUpstream(
   const upstream = process.env.CAD_CONVERT_UPSTREAM?.trim();
   if (!upstream) return null;
 
-  const res = await fetch(upstream, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(process.env.CAD_CONVERT_UPSTREAM_TOKEN
-        ? { Authorization: `Bearer ${process.env.CAD_CONVERT_UPSTREAM_TOKEN}` }
-        : {}),
-    },
-    body: JSON.stringify({ fileName, contentBase64 }),
+  const failure = (error: string): ConvertResult => ({
+    ok: false,
+    code: 'UPSTREAM_FAILED',
+    error,
+    recommend: 'Try again shortly, or export ASCII DXF from your CAD tool.',
   });
+  try {
+    const res = await fetch(upstream, {
+      method: 'POST',
+      redirect: 'error',
+      signal: AbortSignal.timeout(16_000),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(process.env.CAD_CONVERT_UPSTREAM_TOKEN
+          ? { Authorization: `Bearer ${process.env.CAD_CONVERT_UPSTREAM_TOKEN}` }
+          : {}),
+      },
+      body: JSON.stringify({ fileName, contentBase64 }),
+    });
+    if (!res.ok) return failure(`DWG converter returned HTTP ${res.status}.`);
 
-  if (!res.ok) {
+    const data = await res.json() as { dxf?: unknown };
+    if (typeof data.dxf !== 'string' || Buffer.byteLength(data.dxf) > CAD_CONVERT_MAX_BYTES || !looksLikeAsciiDxf(data.dxf)) {
+      return failure('The converter did not return a usable ASCII DXF.');
+    }
     return {
-      ok: false,
-      code: 'UPSTREAM_FAILED',
-      error: `Upstream converter returned HTTP ${res.status}.`,
-      recommend: 'Export ASCII DXF manually, or check CAD_CONVERT_UPSTREAM.',
+      ok: true,
+      formatIn: 'dwg',
+      formatOut: 'dxf',
+      dxf: data.dxf,
+      fileName: replaceExtension(fileName, '.dxf'),
+      converter: 'upstream',
     };
+  } catch {
+    return failure('The DWG converter is unreachable or timed out.');
   }
-
-  const data = (await res.json()) as { dxf?: string; fileName?: string };
-  if (!data.dxf || typeof data.dxf !== 'string') {
-    return {
-      ok: false,
-      code: 'UPSTREAM_FAILED',
-      error: 'Upstream converter response missing dxf text.',
-      recommend: 'Export ASCII DXF manually.',
-    };
-  }
-
-  return {
-    ok: true,
-    formatIn: 'dwg',
-    formatOut: 'dxf',
-    dxf: data.dxf,
-    fileName: data.fileName ?? fileName.replace(/\.dwg$/i, '.dxf'),
-    converter: 'upstream',
-  };
 }
 
 export default async function handler(
