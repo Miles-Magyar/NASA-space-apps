@@ -122,7 +122,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     <section class="safety-fit-panel" aria-labelledby="evidence-match-title">
       <div class="safety-fit-head">
         <h2 id="evidence-match-title">Top match in the evidence</h2>
-        <button type="button" class="btn si-refresh" aria-controls="si-summary">Generate SI summary</button>
+        <button type="button" class="btn si-refresh" aria-controls="si-summary">Generate Super Intelligence summary</button>
       </div>
       <div class="safety-fit-body" aria-live="polite"></div>
       <div id="si-summary" class="si-body" role="status" hidden></div>
@@ -161,10 +161,10 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
     <section class="plots-host" hidden></section>
     <section class="ranking-panel">
       <div class="ranking-head">
-        <h2>Evidence triage ranking</h2>
+        <h2>Fire safety evidence ranking</h2>
         <label class="ranking-sort-label">Sort by
           <select class="ranking-sort">
-            <option value="triage">Overall triage</option>
+            <option value="triage">Overall score</option>
             <option value="evidence">Evidence strength</option>
             <option value="atmosphere">Atmosphere relevance</option>
             <option value="category">Material category</option>
@@ -279,7 +279,7 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
             ${fit.reasons.map((r) => `<li>${escapeHtml(r)}</li>`).join('')}
           </ul>
           <p class="sources-cell">${sourcesHtml(fit.row)}</p>
-          <p class="si-caveat">Suggestion only for triage against oxygen-limit style screening. Confirm specimen, flow, pressure, and program standards before design decisions.</p>
+          <p class="si-caveat">Use this comparison for initial oxygen-limit screening. Confirm the specimen, airflow, pressure, and applicable standards before making design decisions.</p>
         </details>
       </article>
     `;
@@ -327,12 +327,12 @@ export function renderMissionView(container: HTMLElement, data: MissionDataset):
       .map((r, i) => {
         const sortLabel =
           rankingSort === 'evidence'
-            ? `evidence ${r.evidenceStrength}`
+            ? `${r.evidenceStrength} evidence points`
             : rankingSort === 'atmosphere'
-              ? `atmosphere ${r.atmosphereRelevance}`
+              ? `${r.atmosphereRelevance} atmosphere points`
               : rankingSort === 'category'
-                ? `category ${r.materialCategory}`
-                : `triage ${r.score}`;
+                ? `${r.materialCategory} category points`
+                : `${r.score} points`;
         return `<li>
           <strong>${i + 1}. ${escapeHtml(r.row.name)}</strong>
           <span class="rank-score">${sortLabel}</span>

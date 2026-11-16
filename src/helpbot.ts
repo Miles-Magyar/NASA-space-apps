@@ -9,6 +9,7 @@ const WELCOME_PREVIEW_MS = 5000;
 export interface HelpbotHandle {
   showWelcomePreview: () => void;
   hideWelcomePreview: () => void;
+  returnToTitle: () => void;
   destroy: () => void;
 }
 
@@ -47,7 +48,10 @@ export function mountHelpbot(root: HTMLElement): HelpbotHandle {
     <button type="button" class="helpbot-launcher" aria-label="Open helpbot" aria-expanded="false" aria-controls="helpbot-panel">
       <span class="helpbot-icon" aria-hidden="true"></span>
     </button>
-    <p class="helpbot-welcome-preview" role="status" hidden></p>
+    <div class="helpbot-welcome-preview" hidden>
+      <span role="status"></span>
+      <button type="button" class="helpbot-welcome-dismiss" aria-label="Dismiss Helpbot tip">×</button>
+    </div>
     <section id="helpbot-panel" class="helpbot-panel" aria-label="Helpbot" hidden>
       <div class="helpbot-log" role="log" aria-label="Conversation" tabindex="0"></div>
       <form class="helpbot-form">
@@ -61,26 +65,34 @@ export function mountHelpbot(root: HTMLElement): HelpbotHandle {
   const launcher = root.querySelector<HTMLButtonElement>('.helpbot-launcher')!;
   const panel = root.querySelector<HTMLElement>('.helpbot-panel')!;
   const welcomePreview = root.querySelector<HTMLElement>('.helpbot-welcome-preview')!;
+  const welcomeText = welcomePreview.querySelector<HTMLElement>('[role="status"]')!;
+  const dismissWelcome = welcomePreview.querySelector<HTMLButtonElement>('button')!;
   const log = root.querySelector<HTMLElement>('.helpbot-log')!;
   const form = root.querySelector<HTMLFormElement>('.helpbot-form')!;
   const input = root.querySelector<HTMLInputElement>('#helpbot-input')!;
   const send = form.querySelector<HTMLButtonElement>('button')!;
   let activeRequest: AbortController | null = null;
   let previewTimer: number | undefined;
+  let welcomeShown = false;
 
   function hideWelcomePreview() {
     window.clearTimeout(previewTimer);
     previewTimer = undefined;
     welcomePreview.hidden = true;
-    welcomePreview.textContent = '';
+    welcomeText.textContent = '';
+  }
+
+  function dismissWelcomePreview() {
+    if (document.activeElement === dismissWelcome) launcher.focus();
+    hideWelcomePreview();
   }
 
   function showWelcomePreview() {
-    if (!panel.hidden) return;
-    hideWelcomePreview();
+    if (welcomeShown || !panel.hidden) return;
+    welcomeShown = true;
     welcomePreview.hidden = false;
-    welcomePreview.textContent = WELCOME_MESSAGE;
-    previewTimer = window.setTimeout(hideWelcomePreview, WELCOME_PREVIEW_MS);
+    welcomeText.textContent = 'Ask about fire safety';
+    previewTimer = window.setTimeout(dismissWelcomePreview, WELCOME_PREVIEW_MS);
   }
 
   function renderLog() {
@@ -123,6 +135,7 @@ export function mountHelpbot(root: HTMLElement): HelpbotHandle {
   }
 
   function open() {
+    welcomeShown = true;
     hideWelcomePreview();
     panel.hidden = false;
     launcher.setAttribute('aria-expanded', 'true');
@@ -131,19 +144,21 @@ export function mountHelpbot(root: HTMLElement): HelpbotHandle {
     input.focus();
   }
 
-  function close() {
+  function close(restoreFocus = true) {
     panel.hidden = true;
     launcher.setAttribute('aria-expanded', 'false');
     launcher.setAttribute('aria-label', 'Open helpbot');
-    launcher.focus();
+    if (restoreFocus) launcher.focus();
   }
 
   const onLaunch = () => (panel.hidden ? open() : close());
   launcher.addEventListener('click', onLaunch);
+  dismissWelcome.addEventListener('click', dismissWelcomePreview);
   const onKeydown = (event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || panel.hidden) return;
+    if (event.key !== 'Escape' || (panel.hidden && welcomePreview.hidden)) return;
     event.preventDefault();
-    close();
+    if (panel.hidden) dismissWelcomePreview();
+    else close();
   };
   root.addEventListener('keydown', onKeydown);
 
@@ -177,10 +192,15 @@ export function mountHelpbot(root: HTMLElement): HelpbotHandle {
   return {
     showWelcomePreview,
     hideWelcomePreview,
+    returnToTitle: () => {
+      hideWelcomePreview();
+      if (!panel.hidden) close(false);
+    },
     destroy: () => {
       hideWelcomePreview();
       activeRequest?.abort();
       launcher.removeEventListener('click', onLaunch);
+      dismissWelcome.removeEventListener('click', dismissWelcomePreview);
       root.removeEventListener('keydown', onKeydown);
       form.removeEventListener('submit', onSubmit);
       root.innerHTML = '';

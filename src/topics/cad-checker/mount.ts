@@ -1,5 +1,5 @@
 import type { ScenarioPreset } from '../mission-types';
-import { MATERIALS_LIBRARY, MATERIALS_LIBRARY_VERSION } from '../materials-library';
+import { MATERIALS_LIBRARY_VERSION } from '../materials-library';
 import { requestSummary } from '../../si-client';
 import { ACCEPTED_BUILD_ACCEPT, parseBuildFile } from './parse-bom';
 import { parseAdjacency } from './adjacency';
@@ -66,7 +66,7 @@ export function mountCadChecker(
       <h2>${escapeHtml(title)}</h2>
       <p>${lead}</p>
       <p class="cad-disclaimer" role="note">
-        Triage aid only — not NASA-STD-6001 certification or oxygen-system flight qualification.
+        Use these results for preliminary screening. Flight qualification requires separate testing under the applicable standards.
         Results depend on the material grade and test method. Open the sources next to each flag for the original conditions.
       </p>
       <ol class="cad-flow" aria-label="Checker workflow">
@@ -125,13 +125,13 @@ export function mountCadChecker(
         <div class="cad-si"></div>
       </div>
       <section class="cad-unknowns cad-panel">
-        <h3 class="cad-panel-title">Unknown materials (session)</h3>
-        <p class="muted">Captured misses for the next <code>materials-library.ts</code> data pass. Nothing is uploaded — copy or download JSON locally.</p>
+        <h3 class="cad-panel-title">Unlisted materials</h3>
+        <p class="muted">Materials without a match in this app’s library appear here. Export the list as JSON to share with the project team.</p>
         <ul class="cad-unknown-list"></ul>
         <div class="cad-actions">
-          <button type="button" class="btn cad-copy-unknowns" disabled>Copy unknowns JSON</button>
-          <button type="button" class="btn cad-download-unknowns" disabled>Download unknowns JSON</button>
-          <button type="button" class="btn cad-clear-unknowns" disabled>Clear session list</button>
+          <button type="button" class="btn cad-copy-unknowns" disabled>Copy list</button>
+          <button type="button" class="btn cad-download-unknowns" disabled>Download list (JSON)</button>
+          <button type="button" class="btn cad-clear-unknowns" disabled>Clear list</button>
         </div>
       </section>
     </div>
@@ -344,7 +344,7 @@ avionics-bay,PMMA,30,near-heat`;
 
     const nativeNote = imported.nativeCad ? ' · native CAD import' : '';
     results.innerHTML = `
-      <p class="muted">Detected format: <strong>${escapeHtml(imported.format)}</strong>${nativeNote} · ${checked.length} parts · library ${MATERIALS_LIBRARY_VERSION}</p>
+      <p class="muted">Detected format: <strong>${escapeHtml(imported.format)}</strong>${nativeNote} · ${checked.length} ${checked.length === 1 ? 'part' : 'parts'}</p>
       <div class="table-wrap" role="region" aria-label="Flammability check results" tabindex="0">
       <table class="cad-table">
         <caption class="sr-only">Flammability check results for ${escapeHtml(scenario.label)}</caption>
@@ -371,19 +371,18 @@ avionics-bay,PMMA,30,near-heat`;
         </tbody>
       </table>
       </div>
-      <p class="muted">Library size: ${MATERIALS_LIBRARY.length} materials/fuels (v${MATERIALS_LIBRARY_VERSION} — handbook-order bands; not ASTM certification). Unknown materials append to the session list below.</p>
     `;
     options.onResults?.(checked, scenario);
 
     const concerns = checked.filter(
       (c) => c.level === 'high-concern' || c.level === 'review' || c.level === 'unknown',
     );
-    si.textContent = 'Generating SI note…';
+    si.textContent = 'Generating a Super Intelligence summary…';
     const summary = await requestSummary({
       topicId: options.topicId ?? 'cad-checker',
       topicTitle: 'BOM flammability check',
       scenarioLabel: scenario.label,
-      scenarioNotes: `${scenario.notes} Library ${MATERIALS_LIBRARY_VERSION}. Interpret flags only; do not invent LOI or temperatures.`,
+      scenarioNotes: scenario.notes,
       topRows: concerns.slice(0, 5).map((c) => ({
         name: c.part.material,
         summary: c.flags.join('; '),

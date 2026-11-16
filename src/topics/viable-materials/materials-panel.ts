@@ -115,8 +115,7 @@ export function renderCadVulnerabilityPlan(host: HTMLElement): void {
         </li>
         <li>
           <strong>Map to the curated library</strong> —
-          Resolve aliases (e.g. Lexan→PC, Teflon→PTFE). Unknowns enter the session export for the next
-          <code>materials-library.ts</code> pass.
+          Match trade names such as Lexan and Teflon to polycarbonate and PTFE. Materials without a match can be exported for review.
         </li>
         <li>
           <strong>Apply zone-specific rules</strong> —
@@ -136,7 +135,7 @@ export function renderCadVulnerabilityPlan(host: HTMLElement): void {
         </li>
         <li>
           <strong>Rank &amp; explain</strong> —
-          Emit pass / review / high-concern with citations; SI summary may interpret flags but cannot invent uncited numbers.
+          Show which materials pass screening, need review, or raise a high concern, with sources for each flag.
         </li>
       </ol>
       <div class="cad-plan-grid">
