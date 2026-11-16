@@ -80,6 +80,7 @@ export function mountCadChecker(
           <label class="cad-file-label">Build / CAD / BOM file
             <input type="file" accept="${ACCEPTED_BUILD_ACCEPT},${NATIVE_CAD_ACCEPT}" class="cad-file" />
           </label>
+          <a class="btn" href="/samples/iss-avionics-panel-sample.dwg" download>Download sample DWG</a>
           <label class="cad-file-label">Adjacency file
             <input type="file" accept=".csv,.tsv,.json,text/csv,application/json" class="cad-adj-file" />
           </label>
