@@ -1,6 +1,6 @@
 # Flame in Freefall
 
-SI-powered fire safety insights from NASA microgravity combustion data — NASA Space Apps Challenge 2026.
+SI-powered fire safety insights from NASA microgravity combustion data — NASA Space Apps Challenge 2026. site - https://www.starindex.health
 
 Interactive dashboard that organizes PSI/NTRS combustion evidence by mission use (cabin materials, fuels, suits, spacecraft, engines, storage, rovers), ranks findings for selected atmospheres, and checks build BOMs against curated flammability limits.
 
