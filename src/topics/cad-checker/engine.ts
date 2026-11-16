@@ -26,7 +26,7 @@ export function checkBom(parts: BomPart[], scenario: ScenarioPreset): CheckResul
       return {
         part,
         level: 'unknown' as const,
-        flags: [`Unknown material “${part.material}” — capture for next library pass`],
+        flags: [`No matching entry for “${part.material}” in the materials library.`],
         sources: [],
       };
     }

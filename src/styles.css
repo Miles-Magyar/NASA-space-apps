@@ -1660,21 +1660,36 @@ img {
   transform: translate(-50%, -50%) rotate(-45deg);
 }
 
-.helpbot-welcome-preview {
+.helpbot-welcome-preview:not([hidden]) {
   position: absolute;
-  right: 0;
-  bottom: calc(100% + .55rem);
-  width: min(20rem, calc(100vw - 2rem));
-  margin: 0;
-  padding: .7rem .85rem;
+  right: calc(100% + .5rem);
+  bottom: 50%;
+  transform: translateY(50%);
+  display: flex;
+  align-items: center;
+  width: max-content;
+  max-width: calc(100vw - 6rem);
+  padding-inline-start: .8rem;
   border: 1px solid var(--line);
-  border-radius: .7rem;
+  border-radius: 999px;
   background: #151515;
   color: var(--cream);
   box-shadow: 0 8px 24px #0009;
-  font-size: .9rem;
-  line-height: 1.45;
-  pointer-events: none;
+  font-size: .85rem;
+  line-height: 1.25;
+}
+
+.helpbot-welcome-dismiss {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
 }
 
 .helpbot-panel {

@@ -189,7 +189,7 @@ function renderGeneral(main: HTMLElement, closeSidebar: () => void) {
         <p class="challenge-label">NASA Space Apps Challenge · Flame in Freefall</p>
         <h1 class="hero-title">Flame in Freefall</h1>
         <img class="match-flame" src="${flameUrl}" width="64" height="64" alt="" />
-        <p class="hero-sub">SI-powered fire safety insights from microgravity combustion data</p>
+        <p class="hero-sub">Super Intelligence (SI) for fire safety insights from microgravity combustion data</p>
         <p class="scroll-hint" aria-hidden="true">Scroll</p>
       </section>
       <div class="sun-panel" aria-hidden="true">
@@ -229,7 +229,7 @@ function renderGeneral(main: HTMLElement, closeSidebar: () => void) {
   reading?.destroy();
   reading = initReadingScroll(main.querySelector('.general-root')!, closeSidebar, (pastTitle) => {
     if (pastTitle) helpbotHandle?.showWelcomePreview();
-    else helpbotHandle?.hideWelcomePreview();
+    else helpbotHandle?.returnToTitle();
   });
 
   main.querySelectorAll('a[href^="#"]').forEach((a) => {

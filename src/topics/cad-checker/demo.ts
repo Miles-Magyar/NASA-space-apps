@@ -93,7 +93,7 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
         <summary>Formats, samples &amp; analysis plan</summary>
         <p class="schema-note">
           Accepted types: <code>${formats}</code>.
-          Native CAD: <strong>DXF</strong> + <strong>STEP</strong> + <strong>glTF/GLB mesh preview</strong>. <strong>DWG→DXF</strong> via fixture/<code>/api/cad-convert</code> (optional upstream worker). SLDPRT / IPT / CATPART / PRT / … → STEP/BOM export guidance.
+          Import <strong>DXF</strong> or <strong>STEP</strong>, preview <strong>glTF/GLB</strong> meshes, or upload a <strong>DWG</strong> for conversion to DXF. For SolidWorks, Inventor, or CATIA files, export a STEP file or a bill of materials.
           Flame BOM schema: <code>id</code>, <code>material</code>, <code>parentId</code>, <code>zone</code>, <code>heaterId</code>, <code>maxExpectedTempC</code>, …
         </p>
         <p class="cad-demo-links">
@@ -111,7 +111,6 @@ export function renderCadCheckerDemo(container: HTMLElement): CadDemoState {
           ·
           <a href="/samples/sample-habitat-panel.glb" download>Sample GLB</a>
         </p>
-        <p class="muted">See <code>docs/CAD_NATIVE_PARTS_PLAN.md</code> and <code>docs/FLAME_BOM_EXPORT.md</code> for CAD export guidance.</p>
       </details>
     </article>
   `;
